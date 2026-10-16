@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from ads.views import index  # ads,
-from ads.seo import robots_txt, sitemap_xml, yandex_verification
+from ads.seo import robots_txt, sitemap_xml, verification_file
 from django.conf import settings
 import os
 
@@ -14,7 +14,7 @@ urlpatterns = [
     path('', index, name='index'),
     path('robots.txt', robots_txt),
     path('sitemap.xml', sitemap_xml),
-    path('yandex_<str:code>.html', yandex_verification),
+    re_path(r'^(?P<name>(yandex_|google)\w+\.html)$', verification_file),
     # не 'ads/': блокировщики рекламы (Adblock) режут адреса с /ads/
     path('rent/', include('ads.urls')),
     path('moto/', (include('moto.urls')), name='moto'),

@@ -148,21 +148,24 @@ def robots_txt(request):
     return HttpResponse("\n".join(lines) + "\n", content_type="text/plain")
 
 
-# Файлы подтверждения прав на сайт (Яндекс.Вебмастер): код из имени файла
-YANDEX_VERIFICATION = ["d1c6f73521a1d06d"]
-
-
-@login_not_required
-def yandex_verification(request, code):
-    if code not in YANDEX_VERIFICATION:
-        raise Http404
-    return HttpResponse(f"""<html>
+# Файлы подтверждения прав на сайт: Яндекс.Вебмастер и Google Search Console
+VERIFICATION_FILES = {
+    "yandex_d1c6f73521a1d06d.html": """<html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     </head>
-    <body>Verification: {code}</body>
+    <body>Verification: d1c6f73521a1d06d</body>
 </html>
-""")
+""",
+    "googlec972cfa24a43c47f.html": "google-site-verification: googlec972cfa24a43c47f.html",
+}
+
+
+@login_not_required
+def verification_file(request, name):
+    if name not in VERIFICATION_FILES:
+        raise Http404
+    return HttpResponse(VERIFICATION_FILES[name])
 
 
 class StaticSitemap(Sitemap):
