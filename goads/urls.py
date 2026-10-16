@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from ads.views import index  # ads,
+from ads.views import details, index, index_armenia, search_properties
 from ads.seo import robots_txt, sitemap_xml, verification_file
 from django.conf import settings
 import os
@@ -19,6 +19,10 @@ urlpatterns = [
     path('rent/', include('ads.urls')),
     path('moto/', (include('moto.urls')), name='moto'),
     path('stuff/', (include('stuff.urls')), name='stuff'),
+    # Армения (MVP): пока только жильё
+    path('am/', index_armenia, name='index_am'),
+    path('am/rent/', search_properties, {'region': 'am'}, name='rent_am'),
+    path('am/rent/details/<int:item_id>/', details, {'region': 'am'}, name='details_am'),
 
 ]
 

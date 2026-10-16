@@ -1,0 +1,10 @@
+{% load static %}
+{# Строка флагов регионов вверху главной. Новый регион — ещё одна ссылка. #}
+<nav class="region-flags" aria-label="Регион">
+    <a href="{% url 'index' %}" title="Гоа, Индия" class="{% if region == 'goa' %}active{% endif %}">
+        <img src="{% static 'vendor/img/flags/in.svg' %}" alt="Гоа">
+    </a>
+    <a href="{% url 'index_am' %}" title="Ереван, Армения" class="{% if region == 'am' %}active{% endif %}">
+        <img src="{% static 'vendor/img/flags/am.svg' %}" alt="Армения">
+    </a>
+</nav>

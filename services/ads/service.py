@@ -49,8 +49,9 @@ from telethon.errors import FloodWaitError  # noqa: E402
 from telethon.sync import TelegramClient  # noqa: E402
 from telethon.tl.types import InputPeerChannel, MessageMediaDocument, MessageMediaPhoto  # noqa: E402
 
+from ads.currency import price_to_rupees  # noqa: E402
 from ads.models import Listing, Photo, Post  # noqa: E402
-from llm import parse_ad  # noqa: E402
+from llm import PROMPT_ARMENIA, parse_ad  # noqa: E402
 from moto.models import MotoListing, MotoPhoto, model_info  # noqa: E402
 from stuff.models import StuffListing, StuffPhoto  # noqa: E402
 from tg_urls import tg_urls as rent_urls  # noqa: E402
@@ -65,7 +66,27 @@ def _load_urls(path: Path) -> list:
 # Каналы жилья, байков и барахолки собираются вместе: GPT сам решает, что это за объявление
 moto_urls = _load_urls(ROOT / "services" / "moto" / "parser" / "tg_urls.py")
 stuff_urls = _load_urls(ROOT / "services" / "stuff" / "parser" / "tg_urls.py")
-tg_urls = list(dict.fromkeys(u.rstrip("/") for u in rent_urls + moto_urls + stuff_urls))
+armenia_urls = _load_urls(ROOT / "services" / "ads" / "parser" / "tg_urls_armenia.py")
+tg_urls = list(dict.fromkeys(u.rstrip("/") for u in rent_urls + moto_urls + stuff_urls + armenia_urls))
+
+# Канал → регион. Каналы Армении разбираются своей подсказкой GPT и дают только жильё.
+ARMENIA_CHANNELS = {u.rstrip("/").rsplit("/", 1)[-1] for u in armenia_urls}
+
+
+def region_of(post) -> str:
+    return Listing.ARMENIA if post.channel in ARMENIA_CHANNELS else Listing.GOA
+
+
+def ask_gpt(post, model: str):
+    """Разбор сообщения; цены армянских объявлений переводятся в рупии, как всё в базе."""
+    if region_of(post) == Listing.GOA:
+        return parse_ad(post.text, model)
+    data = parse_ad(post.text, model, prompt=PROMPT_ARMENIA)
+    if data:
+        for d in [data, *data["items"]]:
+            for f in ("price_month", "price_day"):
+                d[f] = price_to_rupees(d[f], d["currency"])
+    return data
 
 # Вид объявления → (таблица, таблица фото, поле в Post, папка фото внутри media/photos)
 SECTIONS = {
@@ -248,11 +269,11 @@ def _similar_text(candidates, text):
     return None
 
 
-def find_similar_listing(data: dict, text: str, date):
-    """Похожее жильё: тот же посёлок, цена и комнаты, текст совпадает на 75%+."""
+def find_similar_listing(data: dict, text: str, date, region=Listing.GOA):
+    """Похожее жильё: тот же регион, посёлок, цена и комнаты, текст совпадает на 75%+."""
     if not (data["village"] and (data["price_month"] or data["price_day"])):
         return None
-    return _similar_text(Listing.objects.filter(
+    return _similar_text(Listing.objects.filter(region=region,
         village=data["village"], rooms=data["rooms"],
         price_month=data["price_month"], price_day=data["price_day"],
         last_seen__gte=date - timedelta(days=DUP_WINDOW_DAYS)), text)
@@ -280,11 +301,13 @@ def find_similar_stuff(data: dict, text: str, date):
 FIND_SIMILAR = {"rent": find_similar_listing, "bike": find_similar_moto, "sale": find_similar_stuff}
 
 
-def trash_reason(data: dict) -> str:
+def trash_reason(data: dict, region=Listing.GOA) -> str:
     kind = data["kind"]
     if kind not in SECTIONS:
         return kind
-    if data["many_objects"] and not any(not trash_reason(it) for it in data["items"]):
+    if region != Listing.GOA and kind != "rent":
+        return f"{region}_{kind}"   # в Армении пока только жильё
+    if data["many_objects"] and not any(not trash_reason(it, region) for it in data["items"]):
         # список, из которого не вышло ни одной годной позиции
         return {"rent": "many_objects", "bike": "bike_many", "sale": "sale_many"}[kind]
     if data["many_objects"]:
@@ -350,7 +373,7 @@ def create_listing(post: Post, data: dict):
             need_deposit=data["need_deposit"], need_passport=data["need_passport"],
             village=data["village"], text=post.text, first_seen=post.date, last_seen=post.date)
     return Listing.objects.create(
-        village=data["village"], price_month=data["price_month"],
+        region=region_of(post), village=data["village"], price_month=data["price_month"],
         price_day=data["price_day"], agent_percent=data["agent_percent"],
         rooms=data["rooms"], text=post.text,
         first_seen=post.date, last_seen=post.date,
@@ -370,7 +393,7 @@ def prefetch_answers(batch: list, model: str) -> dict:
         seen.add(post.text_hash)
         need.append(post)
     with ThreadPoolExecutor(LLM_WORKERS) as pool:
-        results = pool.map(lambda p: parse_ad(p.text, model), need)
+        results = pool.map(lambda p: ask_gpt(p, model), need)
         return {p.pk: data for p, data in zip(need, results)}
 
 
@@ -402,7 +425,7 @@ def process_new(model: str, limit: int | None = None) -> list:
                 stats["trash"] += 1
             continue
 
-        data = answers[post.pk] if post.pk in answers else parse_ad(post.text, model)
+        data = answers[post.pk] if post.pk in answers else ask_gpt(post, model)
         logger.debug(f"{post}: {data}")
         if data is None:
             post.status = Post.ERROR
@@ -410,7 +433,8 @@ def process_new(model: str, limit: int | None = None) -> list:
             stats["error"] += 1
             continue
 
-        reason = trash_reason(data)
+        region = region_of(post)
+        reason = trash_reason(data, region)
         if reason:
             post.status, post.trash_reason = Post.TRASH, reason
             post.save(update_fields=["status", "trash_reason"])
@@ -418,10 +442,14 @@ def process_new(model: str, limit: int | None = None) -> list:
             continue
 
         # Прайс-лист → своя карточка на каждую годную позицию, обычное объявление → одна
-        items = [it for it in data["items"] if not trash_reason(it)] if data["many_objects"] else [data]
+        items = ([it for it in data["items"] if not trash_reason(it, region)]
+                 if data["many_objects"] else [data])
         is_new = False
         for item in items:
-            similar = FIND_SIMILAR[item["kind"]](item, post.text, post.date)
+            if item["kind"] == "rent":
+                similar = find_similar_listing(item, post.text, post.date, region)
+            else:
+                similar = FIND_SIMILAR[item["kind"]](item, post.text, post.date)
             if similar:
                 attach(post, similar)
                 stats["merged"] += 1

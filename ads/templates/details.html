@@ -26,15 +26,15 @@
 
                 <!-- Характеристики -->
                 <div class="col-lg-4">
-                    <h4 class="fw-bold mb-1">{{ item.village|default:"Посёлок не указан" }}</h4>
+                    <h4 class="fw-bold mb-1">{{ item.village|default:"Место не указано" }}</h4>
                     <div class="text-muted mb-3">{{ room_label|default:"тип не указан" }}</div>
 
                     <div class="mb-3">
                         {% if item.price_month %}
-                        <div><span class="fs-4 fw-bold">{% money item.price_month %}</span> <span class="text-muted">/ месяц</span>{% if currency != 'INR' %} <span class="text-muted small">({% money item.price_month "INR" %})</span>{% endif %}</div>
+                        <div><span class="fs-4 fw-bold">{% money item.price_month %}</span> <span class="text-muted">/ месяц</span>{% if currency != 'INR' and region == 'goa' %} <span class="text-muted small">({% money item.price_month "INR" %})</span>{% endif %}</div>
                         {% endif %}
                         {% if item.price_day %}
-                        <div><span class="fs-5 fw-bold">{% money item.price_day %}</span> <span class="text-muted">/ сутки</span>{% if currency != 'INR' %} <span class="text-muted small">({% money item.price_day "INR" %})</span>{% endif %}</div>
+                        <div><span class="fs-5 fw-bold">{% money item.price_day %}</span> <span class="text-muted">/ сутки</span>{% if currency != 'INR' and region == 'goa' %} <span class="text-muted small">({% money item.price_day "INR" %})</span>{% endif %}</div>
                         {% endif %}
                         {% if item.agent_percent %}
                         <div class="text-muted">комиссия агента {{ item.agent_percent }}%</div>
@@ -65,7 +65,7 @@
                     {% with photos=item.photos.all %}
                     {% if photos %}
                     <div class="main-photo-container mb-2">
-                        <img id="main-photo" src="{{ MEDIA_URL }}{{ photos.0.path }}" alt="{{ room_label|default:'Жильё' }}{% if item.village %}, {{ item.village }}{% endif %} — аренда в Гоа"
+                        <img id="main-photo" src="{{ MEDIA_URL }}{{ photos.0.path }}" alt="{{ room_label|default:'Жильё' }}{% if item.village %}, {{ item.village }}{% endif %} — аренда{% if region == 'am' %} в Ереване{% else %} в Гоа{% endif %}"
                              onclick="this.classList.toggle('zoomed');">
                     </div>
                     {% if photos|length > 1 %}

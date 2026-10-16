@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     {% load static ads_extras %}
-    <link rel="stylesheet" href="{% static 'vendor/css/rent.css' %}?v=7">
+    <link rel="stylesheet" href="{% static 'vendor/css/rent.css' %}?v=8">
     {% include "metrika.html" %}
 </head>
 
@@ -25,7 +25,7 @@
             <div class="filters-sidebar">
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <a href="{% url 'index' %}" class="fw-bold text-decoration-none text-dark">🌴 GOA rent</a>
+                    <a href="{% url conf.home %}" class="fw-bold text-decoration-none text-dark">{% if region == 'am' %}<img src="{% static 'vendor/img/flags/am.svg' %}" alt="" class="brand-flag"> Ереван{% else %}🌴 GOA rent{% endif %}</a>
                     {% if user.is_authenticated %}
                     <form method="post" action="{% url 'logout' %}" class="m-0">
                         {% csrf_token %}
@@ -43,7 +43,7 @@
                 <form method="get" class="collapse d-md-block" id="filters">
 
                     <div class="filter-block">
-                        <h6>Населённый пункт</h6>
+                        <h6>{{ conf.place }}</h6>
                         <select class="form-select form-select-sm" name="village">
                             <option value="">Все</option>
                             {% for village in villages %}
@@ -116,7 +116,7 @@
 
                     <div class="d-grid gap-2 mt-3">
                         <button type="submit" class="btn btn-success btn-apply">Показать</button>
-                        <a href="{% url 'ads:search_properties' %}" class="btn btn-link btn-sm text-muted">Сбросить</a>
+                        <a href="{% url conf.list %}" class="btn btn-link btn-sm text-muted">Сбросить</a>
                     </div>
                 </form>
             </div>
@@ -148,10 +148,10 @@
                 <div class="col-sm-6 col-lg-4 mb-lg-3">
                     <div class="card h-100 shadow-sm border-0">
 
-                        <a href="{% url 'ads:details' item.pk %}" class="photo-link">
+                        <a href="{% url conf.details item.pk %}" class="photo-link">
                             {% with photo=item.photos.all|first %}
                             {% if photo %}
-                            <img src="{{ MEDIA_URL }}{{ photo.path }}" class="card-img-top" alt="Аренда {{ item.rooms|default:'жилья'|upper }}{% if item.village %} в Гоа, {{ item.village }}{% endif %}">
+                            <img src="{{ MEDIA_URL }}{{ photo.path }}" class="card-img-top" alt="Аренда {{ item.rooms|room_short|default:'жилья' }}{% if item.village %} — {{ item.village }}{% endif %}">
                             {% if photo.is_video %}<span class="video-badge">▶ видео</span>{% endif %}
                             {% else %}
                             <img src="{% static 'vendor/img/video.jpg' %}" class="card-img-top" alt="Фото в Telegram">
@@ -161,8 +161,8 @@
 
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-baseline mb-1">
-                                <h6 class="card-title mb-0">{{ item.village|default:"Посёлок не указан" }}</h6>
-                                {% if item.rooms %}<span class="badge text-bg-light">{{ item.rooms|upper }}</span>{% endif %}
+                                <h6 class="card-title mb-0">{{ item.village|default:"Место не указано" }}</h6>
+                                {% if item.rooms %}<span class="badge text-bg-light">{{ item.rooms|room_short }}</span>{% endif %}
                             </div>
 
                             <div class="text-muted small mb-2">
@@ -178,7 +178,7 @@
                                 <span class="price-text">{% money item.price_month %}</span>
                                 <small class="text-muted"> / месяц</small>
                                 {% endif %}
-                                {% if currency != 'INR' %}
+                                {% if currency != 'INR' and region == 'goa' %}
                                 <div class="small text-muted">{% if price_field == 'price_day' %}{% money item.price_day "INR" %}{% else %}{% money item.price_month "INR" %}{% endif %} в объявлении</div>
                                 {% endif %}
                                 {% if item.agent_percent %}
@@ -189,7 +189,7 @@
                             </div>
 
                             <div class="d-flex gap-2 mt-3">
-                                <a href="{% url 'ads:details' item.pk %}" class="btn btn-outline-primary btn-sm flex-fill">Подробнее</a>
+                                <a href="{% url conf.details item.pk %}" class="btn btn-outline-primary btn-sm flex-fill">Подробнее</a>
                                 <a href="{{ item.main_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm flex-fill">Telegram</a>
                             </div>
                         </div>

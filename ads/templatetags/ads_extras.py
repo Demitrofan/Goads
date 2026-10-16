@@ -11,6 +11,17 @@ def rupees(value):
     return "{:,}".format(int(value)).replace(",", " ") + " ₹"
 
 
+ROOMS_SHORT = {"room": "Комната", "1k": "1-комн.", "2k": "2-комн.", "3k": "3-комн.", "4k+": "4+ комн."}
+
+
+@register.filter
+def room_short(code):
+    """Значок комнат на карточке: «2BHK» для Гоа, «2-комн.» для Армении."""
+    if not code:
+        return ""
+    return ROOMS_SHORT.get(code, code.upper())
+
+
 @register.filter
 def sources_label(n):
     """1 → «1 канал», 3 → «3 канала», 5 → «5 каналов»"""

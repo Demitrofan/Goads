@@ -82,9 +82,37 @@ is_free: true, если отдают даром.
     {"bike_model": "Yamaha Aerox 155", "bike_kind": "scooter", "price_month": 14000, "price_day": 1000}]
 """
 
+# Армения (Ереван): только жильё. Цены — в валюте объявления, в рупии переводит сервис.
+PROMPT_ARMENIA = """Ты разбираешь объявления об аренде жилья из Telegram-каналов Армении (в основном Ереван).
+Ответь ТОЛЬКО JSON-объектом с полями:
+
+kind: "rent" — сдаётся жильё (квартира, дом, комната); "seek" — человек ищет жильё;
+  "property_sale" — продажа недвижимости; "other" — всё остальное (реклама, услуги, болтовня).
+village: район Еревана по-русски, с большой буквы (Кентрон, Арабкир, Ачапняк, Аван, Давташен,
+  Эребуни, Канакер-Зейтун, Малатия-Себастия, Нор-Норк, Норк-Мараш, Нубарашен, Шенгавит),
+  или город, если это не Ереван (Гюмри, Дилижан, Цахкадзор, Абовян); null, если не указан.
+  Улица без района — определи район по улице, если уверен, иначе null.
+price_month: цена за месяц, целое число, в валюте объявления, или null. "350к", "350 000" = 350000.
+price_day: цена за сутки, целое число, в валюте объявления, или null.
+currency: валюта цены: "AMD" (драм, ֏, dram), "USD" ($), "RUB" (₽, руб), "EUR" (€).
+  Если валюта не указана: число меньше 10000 — "USD", иначе "AMD".
+agent_percent: комиссия агента в процентах, целое число, или null. "без комиссии" — 0.
+  Комиссия «50% от месячной цены» = 50.
+rooms: "room" (комната), "1k" (однокомнатная), "2k", "3k", "4k+" или null.
+  В Армении считают все комнаты: "2-комнатная" = "2k", "3 комнаты" = "3k".
+many_objects: true, только если в сообщении несколько разных квартир со своими ценами.
+has_ac, has_wifi, has_fridge, has_kitchen, has_washing_machine, has_dishes, has_hot_water,
+owners_nearby: true (явно есть), false (явно нет) или null (не сказано).
+
+Если many_objects = true, добавь поле items — список квартир (не больше 15), в каждой:
+village, rooms, price_month, price_day, currency. Квартиры без цены не включай.
+"""
+
 FIELDS_BOOL = ["has_ac", "has_wifi", "has_fridge", "has_kitchen", "has_washing_machine",
                "has_dishes", "has_hot_water", "owners_nearby"]
-ROOMS = {"room", "1bk", "1bhk", "2bhk", "3bhk", "4bhk+"}
+ROOMS = {"room", "1bk", "1bhk", "2bhk", "3bhk", "4bhk+",
+         "1k", "2k", "3k", "4k+"}   # последние — Армения: считают все комнаты
+CURRENCIES = {"AMD", "USD", "RUB", "EUR", "INR"}
 FIELDS_BIKE_BOOL = ["has_helmet", "has_delivery", "need_deposit", "need_passport"]
 ITEM_CATEGORIES = {"electronics", "home", "clothes", "kids", "sport", "beauty", "other"}
 
@@ -124,6 +152,8 @@ def _clean_one(data: dict) -> dict:
     rooms = (out["rooms"] or "").replace(" ", "")
     if rooms[:1].isdigit() and int(rooms[0]) >= 4 and "bhk" in rooms:
         rooms = "4bhk+"   # 4bhk, 5bhk, 4bhk+ → одна категория
+    elif rooms[:1].isdigit() and int(rooms[0]) >= 4 and rooms.rstrip("+").endswith("k"):
+        rooms = "4k+"
     out["rooms"] = rooms if rooms in ROOMS else None
     if out["agent_percent"] is not None and out["agent_percent"] > 100:
         out["agent_percent"] = None
@@ -141,10 +171,12 @@ def _clean_one(data: dict) -> dict:
     out["item_condition"] = data.get("item_condition") if data.get("item_condition") in ("new", "used") else None
     out["is_free"] = data.get("is_free") is True
     out["agent_fee"] = _int_or_none(data.get("agent_fee"))
+    cur = str(data.get("currency") or "").upper()
+    out["currency"] = cur if cur in CURRENCIES else "INR"
     return out
 
 
-def parse_ad(text: str, model: str, retries: int = 3) -> dict | None:
+def parse_ad(text: str, model: str, retries: int = 3, prompt: str = PROMPT) -> dict | None:
     """Возвращает словарь с полями объявления или None, если модель не ответила."""
     key = (os.environ.get("LLM_API_KEY") or os.environ["OPENROUTER_API_KEY"]).strip()
     url = os.environ.get("LLM_BASE_URL", DEFAULT_BASE_URL).rstrip("/") + "/chat/completions"
@@ -153,7 +185,7 @@ def parse_ad(text: str, model: str, retries: int = 3) -> dict | None:
         "temperature": 0,
         "response_format": {"type": "json_object"},
         "messages": [
-            {"role": "system", "content": PROMPT},
+            {"role": "system", "content": prompt},
             {"role": "user", "content": text[:4000]},
         ],
     }

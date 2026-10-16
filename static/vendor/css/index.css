@@ -130,3 +130,58 @@ img {
 .text-justify {
     text-align: justify;
 }
+/* Армения: свой фон */
+body.region-am {
+    background-image: url(../img/armenia.jpg);
+}
+
+/* «Скоро»: серая карточка без ссылки, без увеличения и подписи при наведении */
+.soon .img-fluid:hover {
+    transform: none;
+}
+
+.soon:hover::after {
+    display: none !important;
+}
+
+/* Строка флагов регионов */
+.region-flags {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px 16px 0;
+}
+
+/* Область нажатия больше самого флага: на телефоне по нему легко попасть пальцем */
+.region-flags a {
+    display: block;
+    padding: 8px 10px;
+    line-height: 0;
+}
+
+.region-flags img {
+    width: 30px;
+    height: 20px;
+    object-fit: cover;
+    border-radius: 3px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+    opacity: 0.6;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.region-flags a:hover img,
+.region-flags a.active img {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.region-flags a.active img {
+    outline: 2px solid #fff;
+}
+
+/* На фото Еревана дисклеймер теряется: светлая подложка */
+body.region-am .home-disclaimer p {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    padding: 8px 12px;
+}

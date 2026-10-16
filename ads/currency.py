@@ -8,11 +8,15 @@ from django.core.cache import cache
 from django.utils.safestring import mark_safe
 
 CBR_URL = "https://www.cbr-xml-daily.ru/daily_json.js"
-CACHE_KEY = "inr_rates"
+CACHE_KEY = "inr_rates_v2"
 CACHE_SECONDS = 6 * 60 * 60
 
 # Запасные курсы на случай, если ЦБ недоступен (октябрь 2026)
-FALLBACK = {"INR": 1.0, "RUB": 0.87, "USD": 0.0104, "UAH": 0.469, "BYN": 0.0313}
+FALLBACK = {"INR": 1.0, "RUB": 0.87, "USD": 0.0104, "UAH": 0.469, "BYN": 0.0313,
+            "AMD": 4.0, "EUR": 0.0095}
+
+# Не показываются, но нужны сборщику: цены армянских объявлений в драмах и евро → рупии
+EXTRA = ["AMD", "EUR"]
 
 CURRENCIES = {
     "RUB": "₽",
@@ -41,7 +45,7 @@ def get_rates() -> dict:
 
         inr_rub = rub("INR")
         rates = {"INR": 1.0, "RUB": inr_rub}
-        for code in CURRENCIES:
+        for code in [*CURRENCIES, *EXTRA]:
             if code not in rates:
                 rates[code] = inr_rub / rub(code)
         cache.set(CACHE_KEY, rates, CACHE_SECONDS)
@@ -51,9 +55,16 @@ def get_rates() -> dict:
     return rates
 
 
-def current_currency(request) -> str:
+def region_currencies(region: str = "goa") -> dict:
+    """Валюты в переключателе: в Армении рупии не нужны."""
+    if region == "goa":
+        return CURRENCIES
+    return {code: sym for code, sym in CURRENCIES.items() if code != "INR"}
+
+
+def current_currency(request, region: str = "goa") -> str:
     cur = request.GET.get("cur") or request.COOKIES.get(COOKIE) or DEFAULT
-    return cur if cur in CURRENCIES else DEFAULT
+    return cur if cur in region_currencies(region) else DEFAULT
 
 
 def convert(rupees, currency: str, rates: dict):
@@ -68,13 +79,25 @@ def to_rupees(amount: int, currency: str, rates: dict) -> int:
     return int(amount / rates[currency])
 
 
+def price_to_rupees(amount, currency: str):
+    """Для сборщика: цена из объявления (драмы, доллары...) → рупии, как хранится в базе."""
+    if not amount or currency == "INR":
+        return amount
+    rates = get_rates()
+    if currency not in rates:
+        rates = FALLBACK
+    return round(amount / rates[currency])
+
+
 def context(request):
     """Контекст-процессор: валюта и курсы доступны во всех шаблонах."""
-    cur = current_currency(request)
+    region = "am" if request.path.startswith("/am/") else "goa"
+    cur = current_currency(request, region)
     return {
+        "region": region,
         "currency": cur,
         "currency_symbol": CURRENCIES[cur],
-        "currencies": CURRENCIES,
+        "currencies": region_currencies(region),
         "rates": get_rates(),
         "rates_json": json.dumps(get_rates()),
         # номер счётчика Яндекс Метрики (в .env YANDEX_METRIKA_ID); пусто — счётчика нет

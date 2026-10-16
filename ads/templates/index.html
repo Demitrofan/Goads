@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {% block css %}
-    <link href="{% static 'vendor/css/index.css'%}?v=2" rel="stylesheet">
+    <link href="{% static 'vendor/css/index.css'%}?v=6" rel="stylesheet">
     <link href="{% static 'vendor/css/jaipur.ttf'%}" rel="stylesheet">
     {% endblock %}
     <style>
@@ -30,14 +30,26 @@
     {% include "metrika.html" %}
 </head>
 
-<body>
+<body{% if region == 'am' %} class="region-am"{% endif %}>
+    {% include "flags.html" %}
     <div class="container home-cards">
         <div class="row w-100">
             <div class="col-md-4">
-                <a href="{% url 'ads:search_properties' %}">
-                    <img src="{% static 'vendor/img/housing.jpg' %}" class="img-fluid" alt="Жильё">
+                <a href="{% if region == 'am' %}{% url 'rent_am' %}{% else %}{% url 'ads:search_properties' %}{% endif %}">
+                    <img src="{% if region == 'am' %}{% static 'vendor/img/housing_am.jpg' %}{% else %}{% static 'vendor/img/housing.jpg' %}{% endif %}" class="img-fluid" alt="Жильё">
                 </a>
             </div>
+            {% if region == 'am' %}
+            {# В Армении пока только жильё: остальные разделы серые, без ссылки #}
+            <div class="col-md-4 soon">
+                <img src="{% static 'vendor/img/moto.jpg' %}" class="img-fluid" alt="Байки — скоро">
+                <span>Скоро</span>
+            </div>
+            <div class="col-md-4 soon">
+                <img src="{% static 'vendor/img/stuff.jpg' %}" class="img-fluid" alt="Барахолка — скоро">
+                <span>Скоро</span>
+            </div>
+            {% else %}
             <div class="col-md-4">
                 <a href="{% url 'moto:search_properties_moto' %}">
                     <img src="{% static 'vendor/img/moto.jpg' %}" class="img-fluid" alt="Байки">
@@ -48,6 +60,7 @@
                     <img src="{% static 'vendor/img/stuff.jpg' %}" class="img-fluid" alt="Барахолка">
                 </a>
             </div>
+            {% endif %}
         </div>
     </div>
     <div class="container home-disclaimer">
@@ -55,7 +68,7 @@
             <div class="col-12">
                 <p class="text-justify mb-0">
                     Дисклеймер: автор данного сервиса не несет ответственности за достоверность и актуальность информации,
-                    размещенной в представленных объявлениях. Все объявления собираются автоматически из телеграм-каналов Гоа и систематизируются при помощи нейросети. Это
+                    размещенной в представленных объявлениях. Все объявления собираются автоматически из телеграм-каналов {% if region == 'am' %}Армении{% else %}Гоа{% endif %} и систематизируются при помощи нейросети. Это
                     обеспечивает удобство при просмотре и поиске информации. В каждом объявлении обязательно приведена ссылка на источник, чтобы пользователи могли проверить
                     дополнительные детали.
                     Если вы владелец Telegram-канала, объявления из которого публикуются на сайте, и не хотите этого,

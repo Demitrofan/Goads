@@ -195,3 +195,10 @@ html {
 .filters-sidebar {
     overflow-x: hidden;
 }
+
+/* Флаг региона рядом с названием сайта */
+.brand-flag {
+    height: 14px;
+    border-radius: 2px;
+    vertical-align: -1px;
+}

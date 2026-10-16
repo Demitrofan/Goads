@@ -2,7 +2,8 @@ from datetime import timedelta
 
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from ads.currency import COOKIE, current_currency, get_rates, to_rupees
@@ -17,6 +18,23 @@ ROOMS = [
     ("3bhk", "3 BHK"),
     ("4bhk+", "4+ BHK"),
 ]
+
+# В Армении считают все комнаты: «2-комнатная» — гостиная и спальня
+ROOMS_ARMENIA = [
+    ("room", "Комната"),
+    ("1k", "1-комнатная"),
+    ("2k", "2-комнатная"),
+    ("3k", "3-комнатная"),
+    ("4k+", "4+ комнат"),
+]
+
+# Регион → что отличается на страницах жилья: адреса, комнаты, подписи
+REGIONS = {
+    Listing.GOA: dict(rooms=ROOMS, home="index", list="ads:search_properties",
+                      details="ads:details", place="Населённый пункт"),
+    Listing.ARMENIA: dict(rooms=ROOMS_ARMENIA, home="index_am", list="rent_am",
+                          details="details_am", place="Район"),
+}
 
 AMENITIES = [
     ("has_ac", "Кондиционер"),
@@ -38,16 +56,16 @@ PERIODS = [
 DEFAULT_PERIOD = "7"
 
 
-def village_list():
+def village_list(region=Listing.GOA):
     # order_by сбрасывает сортировку модели по дате, иначе distinct не схлопывает повторы
     return list(
-        Listing.objects
+        Listing.objects.filter(region=region)
         .exclude(village__isnull=True).exclude(village="")
         .order_by("village").values_list("village", flat=True).distinct()
     )
 
 
-def get_form_data(request):
+def get_form_data(request, rooms=ROOMS):
     g = request.GET
     period = g.get("period", DEFAULT_PERIOD)
     return {
@@ -57,18 +75,18 @@ def get_form_data(request):
         "words": g.get("words", "").strip(),
         "village": g.get("village", "").strip(),
         "period": period if period in dict(PERIODS) else DEFAULT_PERIOD,
-        "rooms": [r for r, _ in ROOMS if g.get(f"rooms_{r}") == "on"],
+        "rooms": [r for r, _ in rooms if g.get(f"rooms_{r}") == "on"],
         "amenities": [a for a, _ in AMENITIES if g.get(a) == "on"],
     }
 
 
-def build_queryset(form, currency="INR"):
+def build_queryset(form, currency="INR", region=Listing.GOA):
     price_field = "price_day" if form["rent_period"] == "daily" else "price_month"
     since = timezone.now() - timedelta(days=int(form["period"]))
     rates = get_rates()
 
     # Цена в фильтре — в валюте сайта, в базе — рупии
-    q = Q(last_seen__gte=since) & Q(**{f"{price_field}__gt": 0})
+    q = Q(region=region) & Q(last_seen__gte=since) & Q(**{f"{price_field}__gt": 0})
     if form["price_from"].isdigit():
         q &= Q(**{f"{price_field}__gte": to_rupees(int(form["price_from"]), currency, rates)})
     if form["price_to"].isdigit():
@@ -93,10 +111,15 @@ def index(request):
     return render(request, "index.html", {"seo": seo.index_seo()})
 
 
-def search_properties(request):
-    form = get_form_data(request)
-    currency = current_currency(request)
-    queryset, price_field = build_queryset(form, currency)
+def index_armenia(request):
+    return render(request, "index.html", {"seo": seo.index_armenia_seo()})
+
+
+def search_properties(request, region=Listing.GOA):
+    conf = REGIONS[region]
+    form = get_form_data(request, conf["rooms"])
+    currency = current_currency(request, region)
+    queryset, price_field = build_queryset(form, currency, region)
 
     sort = request.GET.get("sort", "fresh")
     if sort == "cheap":
@@ -116,16 +139,17 @@ def search_properties(request):
 
     response = render(request, "ads.html", {
         "page_obj": page_obj,
-        "villages": village_list(),
+        "villages": village_list(region),
         "form": form,
-        "rooms": ROOMS,
+        "rooms": conf["rooms"],
+        "conf": conf,
         "amenities": AMENITIES,
         "periods": PERIODS,
         "num_properties": page_obj.paginator.count,
         "price_field": price_field,
         "sort": sort,
         "query": params.urlencode(),
-        "seo": seo.rent_list_seo(request),
+        "seo": seo.rent_list_seo(request) if region == Listing.GOA else seo.rent_list_armenia_seo(request),
     })
     return remember_currency(request, response)
 
@@ -137,12 +161,16 @@ def remember_currency(request, response):
     return response
 
 
-def details(request, item_id):
+def details(request, item_id, region=Listing.GOA):
     item = get_object_or_404(Listing.objects.prefetch_related("photos"), pk=item_id)
+    if item.region != region:   # объявление другого региона — на его адрес
+        return redirect(reverse(REGIONS[item.region]["details"], args=[item.pk]), permanent=True)
+    conf = REGIONS[region]
     amenities = [(label, getattr(item, field)) for field, label in AMENITIES]
-    room_label = dict(ROOMS).get(item.rooms, item.rooms)
+    room_label = dict(conf["rooms"]).get(item.rooms, item.rooms)
     return render(request, "details.html", {
         "item": item,
+        "conf": conf,
         "seo": seo.rent_seo(item, room_label),
         "posts": item.posts.order_by("-date"),
         "amenities": amenities,

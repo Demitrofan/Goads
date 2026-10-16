@@ -73,6 +73,21 @@ def index_seo():
                 "аренда и продажа байков, барахолка. Фильтры по цене и посёлку.", "/")
 
 
+# Армения — пробная версия: от поисковиков пока закрыта (noindex), в карту сайта не входит
+def index_armenia_seo():
+    return page("Аренда квартир в Ереване — GOA доска",
+                "Объявления об аренде квартир в Ереване из русскоязычных Telegram-каналов "
+                "в одном месте.", "/am/", image="vendor/img/armenia.jpg", noindex=True)
+
+
+def rent_list_armenia_seo(request):
+    seo = list_page(request, "Аренда квартир в Ереване",
+                    "Аренда квартир в Ереване из русскоязычных Telegram-каналов: цены, фото, районы.",
+                    "vendor/img/armenia.jpg")
+    seo["noindex"] = True
+    return seo
+
+
 def rent_list_seo(request):
     return list_page(request, "Аренда жилья в Гоа — дома и квартиры посуточно и помесячно",
                      "Объявления об аренде жилья в Гоа из русскоязычных Telegram-каналов: "
@@ -99,6 +114,12 @@ def rent_seo(item, room_label):
     what = room_label or "Жильё"
     cost = (f"{price(item.price_month)}/мес" if item.price_month
             else f"{price(item.price_day)}/сутки" if item.price_day else "")
+    if item.region == Listing.ARMENIA:
+        title = f"{what}{where}" + " | Аренда квартир в Ереване"
+        seo = page(title, f"Аренда: {what}{where}, Армения. " + item.text,
+                   reverse("details_am", args=[item.pk]), noindex=True)
+        seo["image"] = photo_url(item, "vendor/img/armenia.jpg")
+        return seo
     title = f"{what}{where}" + (f" — {cost}" if cost else "") + " | Аренда жилья в Гоа"
     description = f"Аренда: {what}{where}, Гоа. " + (f"Цена {cost}. " if cost else "") + item.text
     seo = page(title, description, reverse("ads:details", args=[item.pk]), noindex=is_stale(item))
@@ -188,12 +209,12 @@ class ListingSitemap(Sitemap):
     changefreq = "daily"
     priority = 0.6
 
-    def __init__(self, model, url_name):
-        self.model, self.url_name = model, url_name
+    def __init__(self, model, url_name, **only):
+        self.model, self.url_name, self.only = model, url_name, only
 
     def items(self):
         since = timezone.now() - timedelta(days=FRESH_DAYS)
-        return self.model.objects.filter(last_seen__gte=since).order_by("-last_seen")
+        return self.model.objects.filter(last_seen__gte=since, **self.only).order_by("-last_seen")
 
     def location(self, item):
         return reverse(self.url_name, args=[item.pk])
@@ -204,7 +225,7 @@ class ListingSitemap(Sitemap):
 
 SITEMAPS = {
     "pages": StaticSitemap(),
-    "rent": ListingSitemap(Listing, "ads:details"),
+    "rent": ListingSitemap(Listing, "ads:details", region=Listing.GOA),
     "moto": ListingSitemap(MotoListing, "moto:details_moto"),
     "stuff": ListingSitemap(StuffListing, "stuff:details_stuff"),
 }
