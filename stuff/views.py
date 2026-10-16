@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
 from ads.currency import current_currency, get_rates, to_rupees
+from ads import seo
 from ads.views import PERIODS, remember_currency
 from stuff.models import StuffListing
 
@@ -81,6 +82,7 @@ def search_properties_stuff(request):
         "num_properties": page_obj.paginator.count,
         "sort": sort,
         "query": params.urlencode(),
+        "seo": seo.stuff_list_seo(request),
     })
     return remember_currency(request, response)
 
@@ -89,6 +91,7 @@ def details_stuff(request, item_id):
     item = get_object_or_404(StuffListing.objects.prefetch_related("photos"), pk=item_id)
     return render(request, "details_stuff.html", {
         "item": item,
+        "seo": seo.stuff_seo(item),
         "posts": item.posts.order_by("-date"),
         "category_label": dict(CATEGORIES).get(item.category, ""),
         "condition_label": dict(CONDITIONS).get(item.condition, ""),

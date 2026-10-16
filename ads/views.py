@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from ads.currency import COOKIE, current_currency, get_rates, to_rupees
 from ads.models import Listing
+from ads import seo
 
 ROOMS = [
     ("room", "Комната"),
@@ -89,7 +90,7 @@ def build_queryset(form, currency="INR"):
 
 
 def index(request):
-    return render(request, "index.html")
+    return render(request, "index.html", {"seo": seo.index_seo()})
 
 
 def search_properties(request):
@@ -124,6 +125,7 @@ def search_properties(request):
         "price_field": price_field,
         "sort": sort,
         "query": params.urlencode(),
+        "seo": seo.rent_list_seo(request),
     })
     return remember_currency(request, response)
 
@@ -138,9 +140,11 @@ def remember_currency(request, response):
 def details(request, item_id):
     item = get_object_or_404(Listing.objects.prefetch_related("photos"), pk=item_id)
     amenities = [(label, getattr(item, field)) for field, label in AMENITIES]
+    room_label = dict(ROOMS).get(item.rooms, item.rooms)
     return render(request, "details.html", {
         "item": item,
+        "seo": seo.rent_seo(item, room_label),
         "posts": item.posts.order_by("-date"),
         "amenities": amenities,
-        "room_label": dict(ROOMS).get(item.rooms, item.rooms),
+        "room_label": room_label,
     })

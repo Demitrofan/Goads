@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from ads.views import index  # ads,
+from ads.seo import robots_txt, sitemap_xml
 from django.conf import settings
 import os
 
@@ -11,6 +12,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', index, name='index'),
+    path('robots.txt', robots_txt),
+    path('sitemap.xml', sitemap_xml),
     # не 'ads/': блокировщики рекламы (Adblock) режут адреса с /ads/
     path('rent/', include('ads.urls')),
     path('moto/', (include('moto.urls')), name='moto'),

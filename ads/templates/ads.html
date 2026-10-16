@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>GOA rent — аренда жилья</title>
+    {% include "seo.html" %}
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -151,7 +151,7 @@
                         <a href="{% url 'ads:details' item.pk %}" class="photo-link">
                             {% with photo=item.photos.all|first %}
                             {% if photo %}
-                            <img src="{{ MEDIA_URL }}{{ photo.path }}" class="card-img-top" alt="Фото жилья">
+                            <img src="{{ MEDIA_URL }}{{ photo.path }}" class="card-img-top" alt="Аренда {{ item.rooms|default:'жилья'|upper }}{% if item.village %} в Гоа, {{ item.village }}{% endif %}">
                             {% if photo.is_video %}<span class="video-badge">▶ видео</span>{% endif %}
                             {% else %}
                             <img src="{% static 'vendor/img/video.jpg' %}" class="card-img-top" alt="Фото в Telegram">

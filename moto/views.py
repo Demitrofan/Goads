@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
 from ads.currency import current_currency, get_rates, to_rupees
+from ads import seo
 from ads.views import PERIODS, remember_currency
 from moto.models import MotoListing
 
@@ -102,6 +103,7 @@ def search_properties_moto(request):
         "price_field": price_field,
         "sort": sort,
         "query": params.urlencode(),
+        "seo": seo.moto_list_seo(request),
     })
     return remember_currency(request, response)
 
@@ -116,6 +118,7 @@ def details_moto(request, item_id):
     ]
     return render(request, "details_moto.html", {
         "item": item,
+        "seo": seo.moto_seo(item),
         "posts": item.posts.order_by("-date"),
         "options": options,
         "kind_label": dict(KINDS).get(item.kind, ""),

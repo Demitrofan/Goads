@@ -1,0 +1,12 @@
+{# Теги для поисковиков и превью ссылок в мессенджерах; данные — из ads/seo.py #}
+    <title>{{ seo.title }}</title>
+    <meta name="description" content="{{ seo.description }}">
+    {% if seo.noindex %}<meta name="robots" content="noindex, follow">{% else %}<link rel="canonical" href="{{ seo.canonical }}">{% endif %}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="GOA доска">
+    <meta property="og:locale" content="ru_RU">
+    <meta property="og:title" content="{{ seo.title }}">
+    <meta property="og:description" content="{{ seo.description }}">
+    <meta property="og:url" content="{{ seo.canonical }}">
+    <meta property="og:image" content="{{ seo.image }}">
+    <meta name="twitter:card" content="summary_large_image">
