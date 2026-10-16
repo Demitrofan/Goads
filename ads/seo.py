@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.sitemaps import Sitemap
 from django.contrib.sitemaps.views import sitemap
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
@@ -146,6 +146,23 @@ def robots_txt(request):
         f"Sitemap: {SITE_URL}/sitemap.xml",
     ]
     return HttpResponse("\n".join(lines) + "\n", content_type="text/plain")
+
+
+# Файлы подтверждения прав на сайт (Яндекс.Вебмастер): код из имени файла
+YANDEX_VERIFICATION = ["d1c6f73521a1d06d"]
+
+
+@login_not_required
+def yandex_verification(request, code):
+    if code not in YANDEX_VERIFICATION:
+        raise Http404
+    return HttpResponse(f"""<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+    <body>Verification: {code}</body>
+</html>
+""")
 
 
 class StaticSitemap(Sitemap):
