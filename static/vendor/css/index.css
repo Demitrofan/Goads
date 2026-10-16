@@ -1,0 +1,105 @@
+@font-face {
+    font-family: 'jaipur';
+    src: url('jaipur.ttf') format('truetype');
+}
+
+body {
+    background: url(../img/backgroud1.jpg) no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+}
+
+
+.col-md-4 {
+    text-align: center;
+    position: relative;
+    text-align: center;
+}
+
+.col-md-4:first-child::after {
+    font-family: 'jaipur', sans-serif;
+    font-size: 330%;
+    content: "Где жить";
+    display: none;
+    position: absolute;
+    top: 88%;
+    left: 20%;
+    color: white;
+    opacity: 0;
+    animation: fade-in 0.5s ease-in-out forwards;
+}
+
+.col-md-4:nth-child(2)::after {
+    font-family: 'jaipur', sans-serif;
+    font-size: 330%;
+    content: "На чем ездить";
+    display: none;
+    position: absolute;
+    top: 88%;
+    left: 10%;
+    color: white;
+    opacity: 0;
+    animation: fade-in 0.5s ease-in-out forwards;
+}
+
+.col-md-4:last-child::after {
+    font-family: 'jaipur', sans-serif;
+    font-size: 330%;
+    content: "Барахолка";
+    display: none;
+    position: absolute;
+    top: 88%;
+    left: 20%;
+    color: white;
+    opacity: 0;
+    animation: fade-in 0.5s ease-in-out forwards;
+
+}
+
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+
+.col-md-4:hover::after {
+    display: block;
+    transform-origin: center center;
+}
+
+.img-fluid:hover {
+    transform: scale(1.12);
+    transition: transform 0.9s ease;
+}
+
+img {
+
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    position: relative;
+
+}
+
+.container img {
+    width: 100%;
+    height: 500px;
+    margin-top: 50%;
+}
+
+.text-justify {
+    text-align: justify;
+}

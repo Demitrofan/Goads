@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GOA moto — аренда байков</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% load static ads_extras %}
+    <link rel="stylesheet" href="{% static 'vendor/css/rent.css' %}?v=7">
+</head>
+
+<body>
+
+<div class="container-lg" style="margin-top: 0rem; margin-bottom: 0rem;">
+
+    <div class="row g-4">
+
+        <!-- ================= ФИЛЬТРЫ ================= -->
+        <div class="col-md-4 col-lg-3">
+            <div class="filters-sidebar">
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <a href="{% url 'index' %}" class="fw-bold text-decoration-none text-dark">🛵 GOA moto</a>
+                    <a href="{% url 'ads:search_properties' %}" class="small text-muted">жильё →</a>
+                </div>
+
+                <!-- На телефоне фильтры свёрнуты под кнопку -->
+                <button class="btn btn-outline-success btn-sm w-100 d-md-none mb-2" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#filters" aria-expanded="false">
+                    Фильтры{% if form.model or form.kinds or form.options or form.price_from or form.price_to or form.words %} (заданы){% endif %}
+                </button>
+
+                <form method="get" class="collapse d-md-block" id="filters">
+
+                    <div class="filter-block">
+                        <h6>Модель</h6>
+                        <select class="form-select form-select-sm" name="model">
+                            <option value="">Все</option>
+                            {% for name in models %}
+                            <option value="{{ name }}" {% if form.model == name %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-block">
+                        <h6>Тип</h6>
+                        {% for value, label in kinds %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="kind_{{ value }}" id="kind_{{ value }}"
+                                   {% if value in form.kinds %}checked{% endif %}>
+                            <label class="form-check-label" for="kind_{{ value }}">{{ label }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="filter-block">
+                        <h6>Цена</h6>
+                        <div class="btn-group btn-group-sm w-100">
+                            <input type="radio" class="btn-check" name="rent_period" id="monthly" value="monthly"
+                                   {% if form.rent_period != 'daily' and form.rent_period != 'sell' %}checked{% endif %}>
+                            <label class="btn btn-outline-success" for="monthly">Месяц</label>
+
+                            <input type="radio" class="btn-check" name="rent_period" id="daily" value="daily"
+                                   {% if form.rent_period == 'daily' %}checked{% endif %}>
+                            <label class="btn btn-outline-success" for="daily">Сутки</label>
+
+                            <input type="radio" class="btn-check" name="rent_period" id="sell" value="sell"
+                                   {% if form.rent_period == 'sell' %}checked{% endif %}>
+                            <label class="btn btn-outline-success" for="sell">Купить</label>
+                        </div>
+                    </div>
+
+                    <div class="filter-block">
+                        <h6>Цена, {{ currency_symbol }}</h6>
+                        <div class="d-flex gap-2">
+                            <input type="number" class="form-control form-control-sm" name="price_from"
+                                   placeholder="от" value="{{ form.price_from }}">
+                            <input type="number" class="form-control form-control-sm" name="price_to"
+                                   placeholder="до" value="{{ form.price_to }}">
+                        </div>
+                    </div>
+
+                    <div class="filter-block">
+                        <h6>Опубликовано</h6>
+                        <select class="form-select form-select-sm" name="period">
+                            {% for value, label in periods %}
+                            <option value="{{ value }}" {% if form.period == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-block">
+                        <h6>Условия</h6>
+                        {% for value, label in options %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="{{ value }}" id="{{ value }}"
+                                   {% if value in form.options %}checked{% endif %}>
+                            <label class="form-check-label" for="{{ value }}">{{ label }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="filter-block">
+                        <h6>Слова в тексте</h6>
+                        <input type="text" class="form-control form-control-sm" name="words"
+                               value="{{ form.words }}" placeholder="ABS, новый...">
+                    </div>
+
+                    <input type="hidden" name="sort" value="{{ sort }}">
+
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="submit" class="btn btn-success btn-apply">Показать</button>
+                        <a href="{% url 'moto:search_properties_moto' %}" class="btn btn-link btn-sm text-muted">Сбросить</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= ОБЪЯВЛЕНИЯ ================= -->
+        <div class="col-md-8 col-lg-9">
+
+            <div class="d-flex justify-content-between align-items-center mb-3 mt-3">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Сортировка">
+                    <button type="button" class="btn btn-outline-secondary sort-btn {% if sort == 'fresh' %}active{% endif %}" data-sort="fresh">Свежие</button>
+                    <button type="button" class="btn btn-outline-secondary sort-btn {% if sort == 'cheap' %}active{% endif %}" data-sort="cheap">Дешевле</button>
+                    <button type="button" class="btn btn-outline-secondary sort-btn {% if sort == 'expensive' %}active{% endif %}" data-sort="expensive">Дороже</button>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Валюта">
+                        {% for code, symbol in currencies.items %}
+                        <button type="button" class="btn btn-outline-success cur-btn {% if code == currency %}active{% endif %}" data-cur="{{ code }}">{{ symbol }}</button>
+                        {% endfor %}
+                    </div>
+                    <div class="text-muted small fw-medium">
+                        Найдено: <strong>{{ num_properties }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                {% for item in page_obj %}
+                <div class="col-sm-6 col-lg-4 mb-lg-3">
+                    <div class="card h-100 shadow-sm border-0">
+
+                        <a href="{% url 'moto:details_moto' item.pk %}" class="photo-link">
+                            {% with photo=item.photos.all|first %}
+                            {% if photo %}
+                            <img src="{{ MEDIA_URL }}{{ photo.path }}" class="card-img-top" alt="Фото байка">
+                            {% if photo.is_video %}<span class="video-badge">▶ видео</span>{% endif %}
+                            {% else %}
+                            <img src="{% static 'vendor/img/video.jpg' %}" class="card-img-top" alt="Фото в Telegram">
+                            {% endif %}
+                            {% endwith %}
+                        </a>
+
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                <h6 class="card-title mb-0">{{ item.model_name|default:"Модель не указана" }}</h6>
+                                {% if item.engine %}<span class="badge text-bg-light">{{ item.engine|floatformat:0 }} см³</span>{% endif %}
+                            </div>
+
+                            <div class="text-muted small mb-2">
+                                {{ item.last_seen|ago }}
+                                {% if item.sources > 1 %} · {{ item.sources|sources_label }}{% endif %}
+                                {% if item.village %} · {{ item.village }}{% endif %}
+                            </div>
+
+                            <div class="mt-auto">
+                                {% if price_field == 'price_day' %}
+                                <span class="price-text">{% money item.price_day %}</span>
+                                <small class="text-muted"> / сутки</small>
+                                {% elif price_field == 'price_sell' %}
+                                <span class="price-text">{% money item.price_sell %}</span>
+                                <small class="text-muted"> продажа</small>
+                                {% else %}
+                                <span class="price-text">{% money item.price_month %}</span>
+                                <small class="text-muted"> / месяц</small>
+                                {% endif %}
+                                {% if price_field == 'price_month' and item.price_day %}
+                                <div class="small text-muted">{% money item.price_day %} / сутки</div>
+                                {% endif %}
+                                {% if item.agent_fee %}
+                                <div class="small text-muted">комиссия {% money item.agent_fee %}</div>
+                                {% elif item.agent_fee == 0 %}
+                                <div class="small text-success">без комиссии</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="d-flex gap-2 mt-3">
+                                <a href="{% url 'moto:details_moto' item.pk %}" class="btn btn-outline-primary btn-sm flex-fill">Подробнее</a>
+                                <a href="{{ item.main_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm flex-fill">Telegram</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted fs-5">Байки не найдены</p>
+                    <p class="text-muted small">Попробуйте расширить период или убрать часть фильтров</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if page_obj.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?{{ query }}&page={{ page_obj.previous_page_number }}">←</a></li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?{{ query }}&page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?{{ query }}&page={{ page_obj.next_page_number }}">→</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<script>window.SITE = {rates: {{ rates_json|safe }}, currency: '{{ currency }}'};</script>
+<script src="{% static 'vendor/js/listings.js' %}?v=1"></script>
+</body>
+</html>

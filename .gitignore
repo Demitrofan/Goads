@@ -1,0 +1,26 @@
+# Секреты
+.env
+*.session
+*.session-journal
+
+# Данные
+*.db
+*.db-journal
+*.log
+static/ads/
+_save/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Редакторы
+.vscode/
+.claude/
+media/
+logs/
+static/moto/
+
+# Локальные заметки для Claude Code (содержат детали окружения)
+CLAUDE.md

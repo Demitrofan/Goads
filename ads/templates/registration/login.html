@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Вход — GOA rent</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container" style="max-width: 380px; margin-top: 12vh;">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+            <h4 class="fw-bold mb-1">🌴 GOA rent</h4>
+            <p class="text-muted small mb-4">Аренда жилья в Гоа из Telegram-каналов. Вход для своих.</p>
+
+            {% if form.errors %}
+            <div class="alert alert-danger py-2 small">Неверное имя или пароль</div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label small" for="id_username">Имя</label>
+                    <input type="text" name="username" id="id_username" class="form-control" autocomplete="username" autofocus required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small" for="id_password">Пароль</label>
+                    <input type="password" name="password" id="id_password" class="form-control" autocomplete="current-password" required>
+                </div>
+                <input type="hidden" name="next" value="{{ next }}">
+                <button type="submit" class="btn btn-success w-100">Войти</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

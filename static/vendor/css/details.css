@@ -1,0 +1,125 @@
+/* details.css — страница детального просмотра объявления */
+
+/* ================ Общие / базовые ================ */
+body.bg-light {
+    background-color: #f8f9fa;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: white;
+}
+
+/* ================ Левая колонка — характеристики ================ */
+.info-item {
+    margin-bottom: 8px;
+    /* основное расстояние между строками */
+    font-size: 1.05rem;
+    line-height: 1.3;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 220px;
+    display: inline-block;
+}
+
+.yes {
+    color: #198754;
+    font-weight: 600;
+}
+
+.no {
+    color: #d16b75;
+    font-weight: 600;
+}
+
+.gray {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* ================ Галерея фотографий ================ */
+.thumbnail-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 10px;
+    margin: 1.5rem 0 1rem 0;
+    padding: 0;
+}
+
+.thumbnail-container img {
+    width: 90px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.thumbnail-container img:hover {
+    transform: scale(1.14);
+    box-shadow: 0 4px 16px rgba(60, 90, 245, 0.35);
+    border-color: #a5d8ff;
+    z-index: 2;
+}
+
+.main-photo-container {
+    text-align: center;
+    margin-bottom: 3.5rem;
+    /* основной способ отодвинуть описание ниже */
+}
+
+#main-photo {
+    max-height: 350px;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    transition: transform 0.35s ease;
+    cursor: zoom-in;
+}
+
+#main-photo.zoomed {
+    transform: scale(1.5);
+    cursor: zoom-out;
+}
+
+/* ================ Описание / текст объявления ================ */
+.text-announcement {
+    font-size: 1.05rem;
+    line-height: 1.4;
+    color: #2d3748;
+}
+
+.text-announcement p {
+    white-space: pre-wrap;
+    margin-bottom: 1.25rem;
+}
+
+/* ================ Мелкие элементы ================ */
+.source-link {
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+.btn-back {
+    font-weight: 500;
+    padding: 0.6rem 1.5rem;
+    min-width: 240px;
+}
+/* Знак белорусского рубля: Б с горизонтальной чертой */
+.byn-sign {
+    text-decoration: line-through;
+    text-decoration-thickness: 0.09em;
+}
