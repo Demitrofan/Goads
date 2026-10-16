@@ -16,7 +16,14 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
+
+# На сервере за nginx с HTTPS (в .env SITE_HTTPS=True)
+if os.environ.get("SITE_HTTPS") == "True":
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = ["https://" + h for h in ALLOWED_HOSTS if h != "*"]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -110,7 +117,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-STATIC_ROOT = '/usr/share/nginx/html/static/'
+STATIC_ROOT = os.environ.get("STATIC_ROOT", '/usr/share/nginx/html/static/')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

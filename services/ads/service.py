@@ -94,6 +94,8 @@ DUP_WINDOW_DAYS = 30         # окно поиска дублей
 MAX_AGE_DAYS = 7             # сообщения старше — не разбираем (неактуальны), помечаем мусором "old"
 LLM_WORKERS = 8              # сколько сообщений отправлять в GPT одновременно
 MAX_PHOTOS = 6
+RENT_MIN_MONTH = 3000            # жильё дешевле ₹/мес — ошибка в цене, в мусор
+RENT_MIN_MONTH_NO_ROOMS = 10000  # жильё без комнат дешевле ₹/мес — обычно байк, в мусор
 PHOTO_MAX_SIDE = 1280
 
 SESSION = str(ROOT / "media_session")
@@ -296,6 +298,13 @@ def trash_reason(data: dict) -> str:
     has_price = data["price_month"] or data["price_day"] or (kind == "bike" and data["price_sell"])
     if not has_price:
         return "no_price" if kind == "rent" else "bike_no_price"
+    if kind == "rent" and data["price_month"]:
+        # Байки, принятые за жильё: в тексте только «6000 в месяц», о байке говорит лишь фото.
+        # Настоящее жильё в Гоа так дёшево не бывает.
+        if data["price_month"] < RENT_MIN_MONTH:
+            return "rent_too_cheap"
+        if not data["rooms"] and data["price_month"] < RENT_MIN_MONTH_NO_ROOMS:
+            return "rent_cheap_no_rooms"
     return ""
 
 

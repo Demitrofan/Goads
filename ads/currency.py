@@ -1,6 +1,7 @@
 """Курсы валют для показа цен. В базе цены в рупиях, на сайте — в выбранной валюте."""
 
 import json
+import os
 import urllib.request
 
 from django.core.cache import cache
@@ -76,4 +77,6 @@ def context(request):
         "currencies": CURRENCIES,
         "rates": get_rates(),
         "rates_json": json.dumps(get_rates()),
+        # номер счётчика Яндекс Метрики (в .env YANDEX_METRIKA_ID); пусто — счётчика нет
+        "metrika_id": os.environ.get("YANDEX_METRIKA_ID", "").strip(),
     }

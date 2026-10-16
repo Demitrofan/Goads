@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {% block css %}
-    <link href="{% static 'vendor/css/index.css'%}" rel="stylesheet">
+    <link href="{% static 'vendor/css/index.css'%}?v=2" rel="stylesheet">
     <link href="{% static 'vendor/css/jaipur.ttf'%}" rel="stylesheet">
     {% endblock %}
     <style>
@@ -27,11 +27,12 @@
         }
     </style>
 
+    {% include "metrika.html" %}
 </head>
 
 <body>
-    <div class="container">
-        <div class="row">
+    <div class="container home-cards">
+        <div class="row w-100">
             <div class="col-md-4">
                 <a href="{% url 'ads:search_properties' %}">
                     <img src="{% static 'vendor/img/housing.jpg' %}" class="img-fluid" alt="Your housing">
@@ -49,19 +50,16 @@
             </div>
         </div>
     </div>
-    <br>
-    <br>
-    <br>
-    <div class="container">
+    <div class="container home-disclaimer">
         <div class="row">
             <div class="col-12">
-                <p class="text-justify">
-
-                    <!-- <img src="{% static 'moto/1232733847/91326/91326.jpg' %}"> -->
+                <p class="text-justify mb-0">
                     Дисклеймер: автор данного сервиса не несет ответственности за достоверность и актуальность информации,
                     размещенной в представленных объявлениях. Все объявления собираются автоматически из телеграм-каналов Гоа и систематизируются при помощи нейросети. Это
                     обеспечивает удобство при просмотре и поиске информации. В каждом объявлении обязательно приведена ссылка на источник, чтобы пользователи могли проверить
                     дополнительные детали.
+                    Если вы владелец Telegram-канала, объявления из которого публикуются на сайте, и не хотите этого,
+                    напишите нам — мы незамедлительно удалим ваши объявления и исключим канал из выдачи.
                 </p>
             </div>
         </div>
