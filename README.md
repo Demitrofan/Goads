@@ -1,5 +1,7 @@
 # Goads — агрегатор объявлений Гоа из Telegram
 
+**Сайт: [goadoska.ru](https://goadoska.ru)** · Live: [goadoska.ru](https://goadoska.ru)
+
 > **In English.** Goads collects rental and classified ads (housing, bikes, second-hand items) from 34 Telegram
 > channels in Goa, India. Free-form messages are deduplicated, parsed by an LLM into structured fields, merged
 > when they describe the same offer, and served on a Django site with search, filters and prices in 5 currencies.
