@@ -1,0 +1,12 @@
+{# Кнопка «Подписаться»: бот в Telegram пришлёт новые объявления под текущие фильтры. #}
+{# Форма POST, а не ссылка: поисковые роботы не наплодят пустых подписок. #}
+{% if bot_enabled %}
+<form method="post" action="{% url 'subscribe' %}" class="subscribe-bar mb-3">
+    {% csrf_token %}
+    <input type="hidden" name="section" value="{{ section }}">
+    <input type="hidden" name="region" value="{{ region }}">
+    <input type="hidden" name="query" value="{{ query }}">
+    <button type="submit" class="btn btn-success btn-sm">🔔 Подписаться на этот поиск</button>
+    <span class="text-muted small">Бот в Telegram пришлёт новые объявления под эти фильтры</span>
+</form>
+{% endif %}

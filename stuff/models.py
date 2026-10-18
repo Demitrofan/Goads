@@ -39,6 +39,8 @@ class StuffListing(models.Model):
     text = models.TextField("Текст")
     first_seen = models.DateTimeField("Впервые замечено", db_index=True)
     last_seen = models.DateTimeField("Последний раз замечено", db_index=True)
+    # Снято: автор удалил сообщение или дописал «сдано/продано». Из списков пропадает.
+    closed = models.DateTimeField("Снято", null=True, blank=True, db_index=True)
 
     class Meta:
         verbose_name = "Вещь"

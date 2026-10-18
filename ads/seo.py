@@ -23,7 +23,8 @@ FRESH_DAYS = 30
 
 
 def is_stale(item):
-    return item.last_seen < timezone.now() - timedelta(days=FRESH_DAYS)
+    """Старое или снятое — от поисковиков прячем, ссылка при этом продолжает работать."""
+    return item.closed is not None or item.last_seen < timezone.now() - timedelta(days=FRESH_DAYS)
 
 
 def price(value):
@@ -225,7 +226,8 @@ class ListingSitemap(Sitemap):
 
     def items(self):
         since = timezone.now() - timedelta(days=FRESH_DAYS)
-        return self.model.objects.filter(last_seen__gte=since, **self.only).order_by("-last_seen")
+        return (self.model.objects.filter(last_seen__gte=since, closed__isnull=True, **self.only)
+                .order_by("-last_seen"))
 
     def location(self, item):
         return reverse(self.url_name, args=[item.pk])

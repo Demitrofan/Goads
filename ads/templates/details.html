@@ -14,7 +14,7 @@
     {% include "metrika.html" %}
 </head>
 
-<body class="bg-light">
+<body class="bg-light" data-viewed-id="rent-{{ item.pk }}">
 
 <div class="container my-4 my-lg-5">
 
@@ -26,6 +26,9 @@
 
                 <!-- Характеристики -->
                 <div class="col-lg-4">
+                    {% if item.closed %}
+                    <div class="alert alert-secondary py-2 mb-3">Объявление снято — автор удалил его в Telegram или отметил, что уже сдано.</div>
+                    {% endif %}
                     <h4 class="fw-bold mb-1">{{ item.village|default:"Место не указано" }}</h4>
                     <div class="text-muted mb-3">{{ room_label|default:"тип не указан" }}</div>
 
@@ -77,7 +80,7 @@
                     </div>
                     {% endif %}
                     {% if photos.0.is_video %}
-                    <div class="small text-muted mt-2">▶ В объявлении есть видео — смотрите в Telegram</div>
+                    <a href="{{ item.main_url }}" target="_blank" rel="noopener" class="btn btn-dark btn-sm mt-2">▶ В объявлении видео — смотреть в Telegram</a>
                     {% endif %}
                     {% else %}
                     <div class="main-photo-container mb-2">
@@ -112,5 +115,6 @@
     </div>
 </div>
 
+    <script src="{% static 'vendor/js/viewed.js' %}?v=1"></script>
 </body>
 </html>

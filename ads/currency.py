@@ -110,4 +110,6 @@ def context(request):
         "rates_json": json.dumps(get_rates()),
         # номер счётчика Яндекс Метрики (в .env YANDEX_METRIKA_ID); пусто — счётчика нет
         "metrika_id": os.environ.get("YANDEX_METRIKA_ID", "").strip(),
+        # кнопка «Подписаться» — только если бот настроен (TG_BOT_TOKEN и TG_BOT_NAME в .env)
+        "bot_enabled": bool(os.environ.get("TG_BOT_TOKEN", "").strip() and os.environ.get("TG_BOT_NAME", "").strip()),
     }

@@ -123,6 +123,8 @@ class Listing(models.Model):
     text = models.TextField("Текст")
     first_seen = models.DateTimeField("Впервые замечено", db_index=True)
     last_seen = models.DateTimeField("Последний раз замечено", db_index=True)
+    # Снято: автор удалил сообщение или дописал «сдано/продано». Из списков пропадает.
+    closed = models.DateTimeField("Снято", null=True, blank=True, db_index=True)
 
     class Meta:
         verbose_name = "Объявление"
@@ -184,3 +186,30 @@ class Photo(models.Model):
     class Meta:
         verbose_name = "Фото"
         verbose_name_plural = "Фото"
+
+
+class Subscription(models.Model):
+    """Подписка на поиск: бот в Telegram пишет о новых объявлениях под эти фильтры.
+
+    Создаётся кнопкой «Подписаться» на странице списка (chat_id ещё пуст), привязывается к чату,
+    когда человек нажимает «Старт» у бота по ссылке t.me/<бот>?start=<code>.
+    """
+
+    SECTIONS = [("rent", "Жильё"), ("bike", "Байки"), ("sale", "Барахолка")]
+
+    code = models.CharField(max_length=16, unique=True)
+    chat_id = models.BigIntegerField("Чат Telegram", null=True, blank=True, db_index=True)
+    section = models.CharField("Раздел", max_length=8, choices=SECTIONS)
+    region = models.CharField("Регион", max_length=8, default=Listing.GOA)
+    query = models.TextField("Фильтры (как в адресе страницы)", blank=True)
+    currency = models.CharField("Валюта фильтра цены", max_length=4, default="RUB")
+    title = models.CharField("Описание", max_length=300)
+    created = models.DateTimeField(auto_now_add=True)
+    sent = models.PositiveIntegerField("Отправлено объявлений", default=0)
+
+    class Meta:
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+
+    def __str__(self):
+        return self.title

@@ -1,14 +1,23 @@
+import json
+import logging
+import os
 from datetime import timedelta
 
+from django.contrib.auth.decorators import login_not_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 from ads.currency import COOKIE, current_currency, get_rates, to_rupees
-from ads.models import Listing
+from ads.models import Listing, Subscription
 from ads import seo
+
+logger = logging.getLogger(__name__)
 
 ROOMS = [
     ("room", "Комната"),
@@ -100,7 +109,7 @@ def build_queryset(form, currency="INR", region=Listing.GOA):
     rates = get_rates()
 
     # Цена в фильтре — в валюте сайта, в базе — рупии
-    q = Q(region=region) & Q(last_seen__gte=since) & Q(**{f"{price_field}__gt": 0})
+    q = Q(region=region) & Q(last_seen__gte=since, closed__isnull=True) & Q(**{f"{price_field}__gt": 0})
     if form["price_from"].isdigit():
         q &= Q(**{f"{price_field}__gte": to_rupees(int(form["price_from"]), currency, rates)})
     if form["price_to"].isdigit():
@@ -111,7 +120,7 @@ def build_queryset(form, currency="INR", region=Listing.GOA):
         q &= Q(village=form["village"])
     if form["words"]:
         for word in form["words"].replace(",", " ").split():
-            q &= Q(text__icontains=word)
+            q &= Q(text__ucontains=word)
     for field in form["amenities"]:
         q &= Q(**{field: True})
 
@@ -191,3 +200,33 @@ def details(request, item_id, region=Listing.GOA):
         "amenities": amenities,
         "room_label": room_label,
     })
+
+
+# ─────────────── Telegram-бот: подписка на поиск ───────────────
+
+@require_POST
+def subscribe(request):
+    """Кнопка «Подписаться»: запоминаем фильтры и отправляем человека к боту."""
+    from ads import bot
+    section = request.POST.get("section")
+    region = request.POST.get("region", Listing.GOA)
+    if not bot.enabled() or section not in dict(Subscription.SECTIONS) or region not in REGIONS:
+        return redirect("index")
+    sub = bot.create(section, region, request.POST.get("query", ""), current_currency(request, region))
+    return redirect(f"https://t.me/{bot.bot_name()}?start={sub.code}")
+
+
+@csrf_exempt
+@login_not_required
+@require_POST
+def telegram_hook(request):
+    """Сюда Telegram присылает сообщения боту. Подлинность — по секрету в заголовке."""
+    from ads import bot
+    secret = os.environ.get("TG_BOT_SECRET", "")
+    if not secret or request.headers.get("X-Telegram-Bot-Api-Secret-Token") != secret:
+        return HttpResponseForbidden()
+    try:
+        bot.handle_update(json.loads(request.body))
+    except Exception:
+        logger.exception("Бот: ошибка обработки сообщения")
+    return HttpResponse("ok")   # всегда 200, иначе Telegram будет слать то же сообщение снова

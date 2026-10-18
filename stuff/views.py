@@ -33,7 +33,7 @@ def build_queryset(form, currency):
     since = timezone.now() - timedelta(days=int(form["period"]))
     rates = get_rates()
 
-    q = Q(last_seen__gte=since)
+    q = Q(last_seen__gte=since, closed__isnull=True)
     if form["free"]:
         q &= Q(is_free=True)
     if form["price_from"].isdigit():
@@ -47,7 +47,7 @@ def build_queryset(form, currency):
         q &= Q(condition__in=form["conditions"])
     if form["words"]:
         for word in form["words"].replace(",", " ").split():
-            q &= Q(text__icontains=word) | Q(title__icontains=word)
+            q &= Q(text__ucontains=word) | Q(title__ucontains=word)
 
     return (StuffListing.objects.filter(q)
             .annotate(sources=Count("posts", distinct=True))

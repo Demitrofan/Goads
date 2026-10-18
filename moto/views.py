@@ -51,7 +51,7 @@ def build_queryset(form, currency):
     since = timezone.now() - timedelta(days=int(form["period"]))
     rates = get_rates()
 
-    q = Q(last_seen__gte=since) & Q(**{f"{price_field}__gt": 0})
+    q = Q(last_seen__gte=since, closed__isnull=True) & Q(**{f"{price_field}__gt": 0})
     if form["price_from"].isdigit():
         q &= Q(**{f"{price_field}__gte": to_rupees(int(form["price_from"]), currency, rates)})
     if form["price_to"].isdigit():
@@ -62,7 +62,7 @@ def build_queryset(form, currency):
         q &= Q(model_name=form["model"])
     if form["words"]:
         for word in form["words"].replace(",", " ").split():
-            q &= Q(text__icontains=word)
+            q &= Q(text__ucontains=word)
     for field, value, _ in OPTIONS:
         if field in form["options"]:
             q &= Q(**{field: value})

@@ -49,6 +49,7 @@ from telethon.errors import FloodWaitError  # noqa: E402
 from telethon.sync import TelegramClient  # noqa: E402
 from telethon.tl.types import InputPeerChannel, MessageMediaDocument, MessageMediaPhoto  # noqa: E402
 
+from ads import bot as tg_bot  # noqa: E402
 from ads.currency import price_to_rupees  # noqa: E402
 from ads.models import Listing, Photo, Post  # noqa: E402
 from llm import PROMPT_ARMENIA, PROMPT_GEORGIA, parse_ad  # noqa: E402
@@ -132,6 +133,11 @@ MAX_PHOTOS = 6
 RENT_MIN_MONTH = 3000            # жильё дешевле ₹/мес — ошибка в цене, в мусор
 RENT_MIN_MONTH_NO_ROOMS = 10000  # жильё без комнат дешевле ₹/мес — обычно байк, в мусор
 PHOTO_MAX_SIDE = 1280
+CHECK_CLOSED_EVERY = 18      # проверка «снято»: раз в 18 циклов (~3 часа)
+CHECK_CLOSED_DAYS = 30       # проверяем объявления, замеченные за последние 30 дней
+# Слова, которые автор дописывает в сообщение, когда сдал или продал
+CLOSED_WORDS = re.compile(r"\b(сдан[аоы]?|забронирован[аоы]?|продан[аоы]?|не\s*актуальн\w*|"
+                          r"rented|sold|reserved|booked|not\s+available)\b", re.I)
 
 SESSION = str(ROOT / "media_session")
 API_ID = int(os.environ["TG_API_ID_2"])
@@ -321,7 +327,8 @@ def attach(post: Post, obj, status=Post.DUPLICATE):
     post.save(update_fields=["status"])
     if post.date > obj.last_seen:
         obj.last_seen = post.date
-        obj.save(update_fields=["last_seen"])
+        obj.closed = None   # снова выложили — значит, ещё актуально
+        obj.save(update_fields=["last_seen", "closed"])
     if post.date < obj.first_seen:   # догрузка истории: нашлось более раннее сообщение
         obj.first_seen = post.date
         obj.save(update_fields=["first_seen"])
@@ -590,11 +597,72 @@ def save_photos(client, peers: dict, created: list, media: dict):
 # Главный цикл
 # ───────────────────────────────
 
+def check_closed(client, peers: dict):
+    """Снятые объявления: автор удалил сообщение или дописал в него «сдано/продано».
+    Один запрос на 100 сообщений канала. Объявление снято, если хоть в одном его сообщении
+    появилось такое слово (раньше его в тексте не было) или удалены все его сообщения."""
+    since = datetime.now(timezone.utc) - timedelta(days=CHECK_CLOSED_DAYS)
+    objs = [o for model, *_ in SECTIONS.values()
+            for o in model.objects.filter(closed__isnull=True, last_seen__gte=since).prefetch_related("posts")]
+    wanted = {}   # канал → номера сообщений
+    for o in objs:
+        for p in o.posts.all():
+            if p.channel in peers:
+                wanted.setdefault(p.channel, set()).add(p.msg_id)
+
+    state = {}   # (канал, номер) → "deleted" | "closed" | "ok"
+    for channel, ids in wanted.items():
+        ids = sorted(ids)
+        for i in range(0, len(ids), 100):
+            chunk = ids[i:i + 100]
+            try:
+                got = client.get_messages(peers[channel], ids=chunk)
+            except FloodWaitError as e:
+                logger.warning(f"FloodWait {e.seconds} с на @{channel} (проверка «снято»), жду")
+                time.sleep(e.seconds + 1)
+                continue
+            except Exception as e:
+                logger.error(f"Проверка «снято» @{channel}: {type(e).__name__}: {e}")
+                continue
+            for msg_id, m in zip(chunk, got):
+                state[(channel, msg_id)] = ("deleted" if m is None
+                                            else "closed" if CLOSED_WORDS.search(m.message or "") else "ok")
+            time.sleep(1)
+
+    now = datetime.now(timezone.utc)
+    closed = 0
+    for o in objs:
+        posts = [p for p in o.posts.all() if (p.channel, p.msg_id) in state]
+        if not posts:
+            continue
+        marks = [state[(p.channel, p.msg_id)] for p in posts]
+        # слово «сдано» засчитываем, только если его не было в исходном тексте («дом сдан в 2022»)
+        said = any(m == "closed" and not CLOSED_WORDS.search(p.text) for p, m in zip(posts, marks))
+        if said or all(m == "deleted" for m in marks):
+            o.closed = now
+            o.save(update_fields=["closed"])
+            closed += 1
+    logger.info(f"Проверка «снято»: объявлений {len(objs)}, сообщений {len(state)}, снято {closed}")
+
+
+_cycles = 0
+
+
 def run_cycle(client, peers, model, limit=None):
+    global _cycles
     media = collect(client, peers)
     backfill(client, peers, media)
     created = process_new(model, limit)
     save_photos(client, peers, created, media)
+    try:
+        sent = tg_bot.notify(created)   # подписчикам бота — новые объявления под их фильтры
+        if sent:
+            logger.info(f"Бот: отправлено объявлений {sent}")
+    except Exception as e:
+        logger.error(f"Бот: ошибка рассылки: {type(e).__name__}: {e}")
+    if _cycles % CHECK_CLOSED_EVERY == 0:
+        check_closed(client, peers)
+    _cycles += 1
 
 
 def single_instance():

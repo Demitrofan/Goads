@@ -14,7 +14,7 @@
     {% include "metrika.html" %}
 </head>
 
-<body class="bg-light">
+<body class="bg-light" data-viewed-id="stuff-{{ item.pk }}">
 
 <div class="container my-4 my-lg-5">
 
@@ -25,6 +25,9 @@
             <div class="row g-4">
 
                 <div class="col-lg-4">
+                    {% if item.closed %}
+                    <div class="alert alert-secondary py-2 mb-3">Объявление снято — автор удалил его в Telegram или отметил, что уже продано.</div>
+                    {% endif %}
                     <h4 class="fw-bold mb-1">{{ item.title }}</h4>
                     <div class="text-muted mb-3">
                         {{ category_label }}{% if condition_label %} · {{ condition_label }}{% endif %}{% if item.village %} · {{ item.village }}{% endif %}
@@ -92,5 +95,6 @@
     </div>
 </div>
 
+    <script src="{% static 'vendor/js/viewed.js' %}?v=1"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from ads.views import details, index, index_region, search_properties
+from ads.views import details, index, index_region, search_properties, subscribe, telegram_hook
 from ads.seo import robots_txt, sitemap_xml, verification_file
 from django.conf import settings
 import os
@@ -17,6 +17,9 @@ urlpatterns = [
     re_path(r'^(?P<name>(yandex_|google)\w+\.html)$', verification_file),
     # не 'ads/': блокировщики рекламы (Adblock) режут адреса с /ads/
     path('rent/', include('ads.urls')),
+    # Telegram-бот: кнопка «Подписаться» и приём сообщений от Telegram
+    path('subscribe/', subscribe, name='subscribe'),
+    path('tg/hook/', telegram_hook),
     path('moto/', (include('moto.urls')), name='moto'),
     path('stuff/', (include('stuff.urls')), name='stuff'),
     # Армения (MVP): пока только жильё
