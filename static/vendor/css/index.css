@@ -89,6 +89,20 @@ body {
     transform-origin: center center;
 }
 
+/* Подпись при наведении — по центру карточки, шрифт по ширине карточки (cqw — % ширины колонки),
+   чтобы «На чем ездить» не вылезало за край узкой карточки */
+.home-cards .col-md-4 {
+    container-type: inline-size;
+}
+
+.home-cards .col-md-4::after {
+    left: 0;
+    right: 0;
+    text-align: center;
+    white-space: nowrap;
+    font-size: min(3.3rem, 11cqw);
+}
+
 .img-fluid:hover {
     transform: scale(1.12);
     transition: transform 0.9s ease;
