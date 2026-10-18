@@ -1,0 +1,9 @@
+[Unit]
+Description=GOA doska - копия базы каждую ночь (22:00 UTC = 03:30 в Гоа)
+
+[Timer]
+OnCalendar=*-*-* 22:00:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

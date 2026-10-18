@@ -24,3 +24,7 @@ static/moto/
 
 # Локальные заметки для Claude Code (содержат детали окружения)
 CLAUDE.md
+
+# Копии базы с сервера
+_backups/
+backups/

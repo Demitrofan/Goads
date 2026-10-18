@@ -1,0 +1,8 @@
+[Unit]
+Description=GOA doska - копия базы
+
+[Service]
+Type=oneshot
+User=goads
+Group=goads
+ExecStart=/bin/sh /srv/goads/deploy/backup_db.sh
