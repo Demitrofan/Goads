@@ -29,7 +29,7 @@
                     {% if item.closed %}
                     <div class="alert alert-secondary py-2 mb-3">Объявление снято — автор удалил его в Telegram или отметил, что уже сдано.</div>
                     {% endif %}
-                    <h4 class="fw-bold mb-1">{{ item.village|default:"Место не указано" }}</h4>
+                    <h4 class="fw-bold mb-1">{{ item.place|default:"Место не указано" }}</h4>
                     <div class="text-muted mb-3">{{ room_label|default:"тип не указан" }}</div>
 
                     <div class="mb-3">
@@ -68,13 +68,13 @@
                     {% with photos=item.photos.all %}
                     {% if photos %}
                     <div class="main-photo-container mb-2">
-                        <img id="main-photo" src="{{ MEDIA_URL }}{{ photos.0.path }}" alt="{{ room_label|default:'Жильё' }}{% if item.village %}, {{ item.village }}{% endif %} — аренда {{ conf.where }}"
+                        <img id="main-photo" src="{{ MEDIA_URL }}{{ photos.0.path }}" alt="{{ room_label|default:'Жильё' }}{% if item.place %}, {{ item.place }}{% endif %} — аренда {{ conf.where }}"
                              onclick="this.classList.toggle('zoomed');">
                     </div>
                     {% if photos|length > 1 %}
                     <div class="thumbnail-container">
                         {% for p in photos %}
-                        <img src="{{ MEDIA_URL }}{{ p.path }}" alt="{{ room_label|default:'Жильё' }}{% if item.village %}, {{ item.village }}{% endif %} — фото {{ forloop.counter }}"
+                        <img src="{{ MEDIA_URL }}{{ p.path }}" alt="{{ room_label|default:'Жильё' }}{% if item.place %}, {{ item.place }}{% endif %} — фото {{ forloop.counter }}"
                              onclick="document.getElementById('main-photo').src = this.src;">
                         {% endfor %}
                     </div>

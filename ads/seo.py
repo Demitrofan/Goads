@@ -121,7 +121,7 @@ def stuff_list_seo(request):
 
 
 def rent_seo(item, room_label):
-    where = f", {item.village}" if item.village else ""
+    where = f", {item.place}" if item.place else ""
     what = room_label or "Жильё"
     cost = (f"{price(item.price_month)}/мес" if item.price_month
             else f"{price(item.price_day)}/сутки" if item.price_day else "")

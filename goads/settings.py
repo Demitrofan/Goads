@@ -82,7 +82,8 @@ WSGI_APPLICATION = 'goads.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db_rielt.db',
+        # DB_PATH — открыть другую базу (например, копию из _backups для проверки)
+        'NAME': os.environ.get('DB_PATH') or BASE_DIR / 'db_rielt.db',
     }
 }
 

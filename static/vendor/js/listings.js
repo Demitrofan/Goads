@@ -53,3 +53,24 @@ document.querySelectorAll('.sort-btn').forEach(btn => {
         window.location.href = url.toString();
     });
 });
+
+// Город → район (Армения, Грузия): в меню районов только районы выбранного города,
+// у города без районов меню районов скрыто. Смена города сбрасывает чужой район.
+(() => {
+    const city = document.getElementById('city-select');
+    const village = document.getElementById('village-select');
+    if (!city || !village) return;
+    const apply = () => {
+        let shown = 0;
+        for (const opt of village.options) {
+            if (!opt.value) continue;
+            const ok = !city.value || opt.dataset.city === city.value;
+            opt.hidden = !ok;
+            if (ok) shown++;
+            else if (opt.selected) village.value = '';
+        }
+        document.getElementById('village-block').hidden = shown === 0;
+    };
+    city.addEventListener('change', apply);   // раньше общего обработчика формы, который её отправит
+    apply();
+})();

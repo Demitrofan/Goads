@@ -52,6 +52,7 @@ from telethon.tl.types import InputPeerChannel, MessageMediaDocument, MessageMed
 from ads import bot as tg_bot  # noqa: E402
 from ads import monitor  # noqa: E402
 from ads.currency import price_to_rupees  # noqa: E402
+from ads.places import split_place  # noqa: E402
 from ads.models import Listing, Photo, Post  # noqa: E402
 from llm import PROMPT_ARMENIA, PROMPT_GEORGIA, parse_ad  # noqa: E402
 from moto.models import MotoListing, MotoPhoto, model_info  # noqa: E402
@@ -100,6 +101,7 @@ def ask_gpt(post, model: str):
         for d in [data, *data["items"]]:
             for f in ("price_month", "price_day"):
                 d[f] = price_to_rupees(d[f], d["currency"])
+            d["city"], d["village"] = split_place(region, d["city"], d["village"])
     return data
 
 # Вид объявления → (таблица, таблица фото, поле в Post, папка фото внутри media/photos)
@@ -353,10 +355,10 @@ def _similar_text(candidates, text):
 
 def find_similar_listing(data: dict, text: str, date, region=Listing.GOA):
     """Похожее жильё: тот же регион, посёлок, цена и комнаты, текст совпадает на 75%+."""
-    if not (data["village"] and (data["price_month"] or data["price_day"])):
+    if not ((data["village"] or data.get("city")) and (data["price_month"] or data["price_day"])):
         return None
     return _similar_text(Listing.objects.filter(region=region,
-        village=data["village"], rooms=data["rooms"],
+        city=data.get("city"), village=data["village"], rooms=data["rooms"],
         price_month=data["price_month"], price_day=data["price_day"],
         last_seen__gte=date - timedelta(days=DUP_WINDOW_DAYS)), text)
 
@@ -455,7 +457,8 @@ def create_listing(post: Post, data: dict):
             need_deposit=data["need_deposit"], need_passport=data["need_passport"],
             village=data["village"], text=post.text, first_seen=post.date, last_seen=post.date)
     return Listing.objects.create(
-        region=region_of(post), village=data["village"], price_month=data["price_month"],
+        region=region_of(post), city=data.get("city"), village=data["village"],
+        price_month=data["price_month"],
         price_day=data["price_day"], agent_percent=data["agent_percent"],
         rooms=data["rooms"], text=post.text,
         first_seen=post.date, last_seen=post.date,

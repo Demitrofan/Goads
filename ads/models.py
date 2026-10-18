@@ -105,6 +105,8 @@ class Listing(models.Model):
     REGIONS = [(GOA, "Гоа"), (ARMENIA, "Армения"), (GEORGIA, "Грузия")]
 
     region = models.CharField("Регион", max_length=8, choices=REGIONS, default=GOA, db_index=True)
+    # Город — только вне Гоа (Ереван, Тбилиси, Батуми…); village тогда — район внутри города (ads/places.py)
+    city = models.CharField("Город", max_length=60, null=True, blank=True, db_index=True)
     village = models.CharField("Посёлок", max_length=100, null=True, blank=True, db_index=True)
     price_month = models.PositiveIntegerField("Цена за месяц, ₹", null=True, blank=True)
     price_day = models.PositiveIntegerField("Цена за сутки, ₹", null=True, blank=True)
@@ -133,6 +135,11 @@ class Listing(models.Model):
 
     def __str__(self):
         return f"{self.village or '?'} · {self.rooms or '?'} · {self.price_month or '—'} ₹"
+
+    @property
+    def place(self) -> str:
+        """«Сабуртало, Тбилиси», «Дилижан», «Арамболь» или пусто."""
+        return ", ".join(x for x in (self.village, self.city) if x)
 
     @property
     def main_url(self):

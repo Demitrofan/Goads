@@ -107,6 +107,8 @@ def describe(section: str, region: str, query: str, currency: str) -> str:
     c = section_conf(section, region)
     form = c["form"](query)
     parts = [dict(Subscription.SECTIONS)[section], c["where"]]
+    if form.get("city"):
+        parts.append(form["city"])
     if form.get("village"):
         parts.append(form["village"])
     if form.get("rooms"):
@@ -216,7 +218,7 @@ def item_line(section: str, obj, cur: str, rates: dict, rooms: dict) -> str:
         what = rooms.get(obj.rooms, obj.rooms or "Жильё")
         price = (f"{money(obj.price_month, cur, rates)}/мес" if obj.price_month
                  else f"{money(obj.price_day, cur, rates)}/сутки" if obj.price_day else "")
-        bits = ["🏠 " + (obj.village or "Место не указано"), what, price]
+        bits = ["🏠 " + (obj.place or "Место не указано"), what, price]
     elif section == "bike":
         price = (f"{money(obj.price_month, cur, rates)}/мес" if obj.price_month
                  else f"{money(obj.price_day, cur, rates)}/сутки" if obj.price_day

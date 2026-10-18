@@ -16,6 +16,7 @@ from django.views.decorators.http import require_POST
 from ads.currency import COOKIE, current_currency, get_rates, to_rupees
 from ads.models import Listing, Subscription
 from ads import seo
+from ads.places import main_city
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +45,10 @@ REGIONS = {
                       details="ads:details", place="Населённый пункт", period="7",
                       where="в Гоа", of="Гоа"),
     Listing.ARMENIA: dict(rooms=ROOMS_ARMENIA, home="index_am", list="rent_am",
-                          details="details_am", place="Район", period="14",
+                          details="details_am", place="Район", period="14", cities=True,
                           brand="Ереван", where="в Ереване", of="Армении"),
     Listing.GEORGIA: dict(rooms=ROOMS_ARMENIA, home="index_ge", list="rent_ge",
-                          details="details_ge", place="Район / город", period="14",
+                          details="details_ge", place="Район", period="14", cities=True,
                           brand="Грузия", where="в Грузии", of="Грузии"),
 }
 
@@ -80,12 +81,21 @@ PERIODS = [
 
 
 def village_list(region=Listing.GOA):
+    """[(район, город)] — город нужен меню районов, чтобы показывать районы выбранного города."""
     # order_by сбрасывает сортировку модели по дате, иначе distinct не схлопывает повторы
     return list(
         Listing.objects.filter(region=region)
         .exclude(village__isnull=True).exclude(village="")
-        .order_by("village").values_list("village", flat=True).distinct()
+        .order_by("village", "city").values_list("village", "city").distinct()
     )
+
+
+def city_list(region):
+    """Города региона: главный первым, остальные — по числу объявлений."""
+    rows = (Listing.objects.filter(region=region).exclude(city__isnull=True).exclude(city="")
+            .order_by().values("city").annotate(n=Count("id")).values_list("city", "n"))
+    main = main_city(region)
+    return [c for c, _ in sorted(rows, key=lambda r: (r[0] != main, -r[1], r[0]))]
 
 
 def get_form_data(request, rooms=ROOMS, default_period="7"):
@@ -96,6 +106,7 @@ def get_form_data(request, rooms=ROOMS, default_period="7"):
         "price_from": g.get("price_from", "").strip(),
         "price_to": g.get("price_to", "").strip(),
         "words": g.get("words", "").strip(),
+        "city": g.get("city", "").strip(),
         "village": g.get("village", "").strip(),
         "period": period if period in dict(PERIODS) else default_period,
         "rooms": [r for r, _ in rooms if g.get(f"rooms_{r}") == "on"],
@@ -116,6 +127,8 @@ def build_queryset(form, currency="INR", region=Listing.GOA):
         q &= Q(**{f"{price_field}__lte": to_rupees(int(form["price_to"]), currency, rates)})
     if form["rooms"]:
         q &= Q(rooms__in=form["rooms"])
+    if form["city"]:
+        q &= Q(city=form["city"])
     if form["village"]:
         q &= Q(village=form["village"])
     if form["words"]:
@@ -164,6 +177,7 @@ def search_properties(request, region=Listing.GOA):
     response = render(request, "ads.html", {
         "page_obj": page_obj,
         "villages": village_list(region),
+        "cities": city_list(region) if conf.get("cities") else [],
         "form": form,
         "rooms": conf["rooms"],
         "conf": conf,

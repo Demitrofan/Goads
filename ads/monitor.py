@@ -127,7 +127,7 @@ def watchdog():
     service = subprocess.run(["systemctl", "is-active", "goads-collector"],
                              capture_output=True, text=True).stdout.strip()
     try:
-        last = datetime.fromisoformat(HEARTBEAT.read_text(encoding="utf-8"))
+        last = datetime.fromisoformat(HEARTBEAT.read_text(encoding="utf-8").strip())
     except (OSError, ValueError):
         last = None
     now = datetime.now(timezone.utc)
@@ -194,7 +194,7 @@ def report(save: bool = True) -> str:
               f"Осталось: {fmt(money['left'])}"]
 
     try:
-        last = datetime.fromisoformat(HEARTBEAT.read_text(encoding="utf-8"))
+        last = datetime.fromisoformat(HEARTBEAT.read_text(encoding="utf-8").strip())
         lines.append(f"\nПоследний цикл сбора: {int((now - last).total_seconds() // 60)} мин назад")
     except (OSError, ValueError):
         pass

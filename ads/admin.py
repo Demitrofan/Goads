@@ -48,8 +48,8 @@ class PhotoInline(admin.TabularInline):
 
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ("id", "village", "rooms", "price_month", "price_day", "agent_percent", "last_seen")
-    list_filter = ("village", "rooms")
+    list_display = ("id", "region", "city", "village", "rooms", "price_month", "price_day", "agent_percent", "last_seen")
+    list_filter = ("region", "city", "rooms")
     search_fields = ("text",)
     date_hierarchy = "last_seen"
     inlines = [PostInline, PhotoInline]
