@@ -80,6 +80,8 @@ class MotoListing(models.Model):
     SCOOTER, MOTORCYCLE = "scooter", "motorcycle"
     KINDS = [(SCOOTER, "Скутер"), (MOTORCYCLE, "Мотоцикл")]
 
+    # Гоа или Пхукет (коды как у Listing.REGIONS)
+    region = models.CharField("Регион", max_length=8, default="goa", db_index=True)
     model_name = models.CharField("Модель", max_length=100, null=True, blank=True, db_index=True)
     kind = models.CharField("Тип", max_length=12, choices=KINDS, null=True, blank=True)
     year = models.PositiveSmallIntegerField("Год", null=True, blank=True)

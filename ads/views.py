@@ -38,6 +38,16 @@ ROOMS_ARMENIA = [
     ("4k+", "4+ комнат"),
 ]
 
+# На Пхукете считают спальни; коды те же, что в Гоа (1bhk = 1 спальня)
+ROOMS_THAI = [
+    ("room", "Комната"),
+    ("1bk", "Студия"),
+    ("1bhk", "1 спальня"),
+    ("2bhk", "2 спальни"),
+    ("3bhk", "3 спальни"),
+    ("4bhk+", "4+ спальни"),
+]
+
 # Регион → что отличается на страницах жилья: адреса, комнаты, подписи.
 # brand — название в шапке списка, where — «где» в подписях, of — «каналов чего» на главной.
 REGIONS = {
@@ -50,14 +60,20 @@ REGIONS = {
     Listing.GEORGIA: dict(rooms=ROOMS_ARMENIA, home="index_ge", list="rent_ge",
                           details="details_ge", place="Район", period="14", cities=True,
                           brand="Грузия", where="в Грузии", of="Грузии"),
+    Listing.PHUKET: dict(rooms=ROOMS_THAI, home="index_th", list="rent_th",
+                         details="details_th", place="Район", period="14", moto="moto_th",
+                         brand="Пхукет", where="на Пхукете", of="Пхукета"),
 }
 
-# Главная регионов кроме Гоа: картинки карточек (пока работает только жильё)
+# Главная регионов кроме Гоа: картинки карточек
 HOME_CARDS = {
     Listing.ARMENIA: dict(housing="vendor/img/housing_am.jpg", moto="vendor/img/moto_am.jpg",
                           stuff="vendor/img/stuff_am.jpg", v=3),   # v — сменить при замене картинок
     Listing.GEORGIA: dict(housing="vendor/img/housing_ge.jpg", moto="vendor/img/moto_ge.jpg",
                           stuff="vendor/img/stuff_ge.jpg", v=1),
+    # moto_list — у байков есть страница (на Пхукете), иначе карточка «Скоро»
+    Listing.PHUKET: dict(housing="vendor/img/housing_th.jpg", moto="vendor/img/moto_th.jpg",
+                         stuff="vendor/img/stuff_th.jpg", moto_list="moto_th", v=1),
 }
 
 AMENITIES = [
@@ -224,7 +240,9 @@ def subscribe(request):
     from ads import bot
     section = request.POST.get("section")
     region = request.POST.get("region", Listing.GOA)
-    if not bot.enabled() or section not in dict(Subscription.SECTIONS) or region not in REGIONS:
+    from moto.views import REGIONS as MOTO_REGIONS
+    allowed = {"rent": REGIONS, "bike": MOTO_REGIONS, "sale": [Listing.GOA]}
+    if not bot.enabled() or region not in allowed.get(section, []):
         return redirect("index")
     sub = bot.create(section, region, request.POST.get("query", ""), current_currency(request, region))
     return redirect(f"https://t.me/{bot.bot_name()}?start={sub.code}")

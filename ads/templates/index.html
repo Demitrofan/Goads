@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {% block css %}
-    <link href="{% static 'vendor/css/index.css'%}?v=20" rel="stylesheet">
+    <link href="{% static 'vendor/css/index.css'%}?v=21" rel="stylesheet">
     <link href="{% static 'vendor/css/jaipur.ttf'%}" rel="stylesheet">
     {% endblock %}
     <style>
@@ -46,11 +46,19 @@
                 </a>
             </div>
             {% if cards %}
-            {# В Армении и Грузии пока только жильё: остальные разделы без ссылки, «Скоро» при наведении #}
+            {# Разделов, которых в регионе ещё нет, — без ссылки, «Скоро» при наведении #}
+            {% if cards.moto_list %}
+            <div class="col-md-4">
+                <a href="{% url cards.moto_list %}">
+                    <img src="{% static cards.moto %}?v={{ cards.v }}" class="img-fluid" alt="Байки">
+                </a>
+            </div>
+            {% else %}
             <div class="col-md-4 soon">
                 <img src="{% static cards.moto %}?v={{ cards.v }}" class="img-fluid" alt="Байки — скоро">
                 <span>Скоро</span>
             </div>
+            {% endif %}
             <div class="col-md-4 soon">
                 <img src="{% static cards.stuff %}?v={{ cards.v }}" class="img-fluid" alt="Барахолка — скоро">
                 <span>Скоро</span>

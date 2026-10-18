@@ -162,7 +162,10 @@ def report(save: bool = True) -> str:
                 .annotate(n=Count("id")).values_list("region", "n"))
     for code, name in Listing.REGIONS:
         lines.append(f"🏠 Жильё, {name}: {rent.get(code, 0)}")
-    lines.append(f"🛵 Байки, Гоа: {MotoListing.objects.filter(first_seen__gte=since).count()}")
+    bikes = dict(MotoListing.objects.filter(first_seen__gte=since).values("region")
+                 .annotate(n=Count("id")).values_list("region", "n"))
+    for code in ("goa", "th"):
+        lines.append(f"🛵 Байки, {dict(Listing.REGIONS)[code]}: {bikes.get(code, 0)}")
     lines.append(f"🛍 Барахолка, Гоа: {StuffListing.objects.filter(first_seen__gte=since).count()}")
 
     closed = sum(m.objects.filter(closed__gte=since).count() for m in (Listing, MotoListing, StuffListing))

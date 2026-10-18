@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from ads.views import details, index, index_region, search_properties, subscribe, telegram_hook
 from ads.seo import robots_txt, sitemap_xml, verification_file
+from moto.views import details_moto, search_properties_moto
 from django.conf import settings
 import os
 
@@ -30,6 +31,12 @@ urlpatterns = [
     path('ge/', index_region, {'region': 'ge'}, name='index_ge'),
     path('ge/rent/', search_properties, {'region': 'ge'}, name='rent_ge'),
     path('ge/rent/details/<int:item_id>/', details, {'region': 'ge'}, name='details_ge'),
+
+    path('th/', index_region, {'region': 'th'}, name='index_th'),
+    path('th/rent/', search_properties, {'region': 'th'}, name='rent_th'),
+    path('th/rent/details/<int:item_id>/', details, {'region': 'th'}, name='details_th'),
+    path('th/moto/', search_properties_moto, {'region': 'th'}, name='moto_th'),
+    path('th/moto/details/<int:item_id>/', details_moto, {'region': 'th'}, name='details_moto_th'),
 
 ]
 

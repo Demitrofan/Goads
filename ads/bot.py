@@ -81,10 +81,11 @@ def section_conf(section: str, region: str):
     if section == "bike":
         from moto import views
         from moto.models import MotoListing
+        conf = views.REGIONS[region]
         return dict(form=lambda q: views.get_form_data(_FakeRequest(q)),
-                    queryset=lambda form, cur: views.build_queryset(form, cur)[0],
-                    list="moto:search_properties_moto", details="moto:details_moto",
-                    model=MotoListing, where="Гоа", kinds=dict(MotoListing.KINDS))
+                    queryset=lambda form, cur: views.build_queryset(form, cur, region)[0],
+                    list=conf["list"], details=conf["details"],
+                    model=MotoListing, where=conf.get("brand") or "Гоа", kinds=dict(MotoListing.KINDS))
     from stuff import views
     from stuff.models import StuffListing
     return dict(form=lambda q: views.get_form_data(_FakeRequest(q)),

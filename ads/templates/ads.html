@@ -26,6 +26,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <a href="{% url conf.home %}" class="fw-bold text-decoration-none text-dark">{% if conf.brand %}<img src="{% static 'vendor/img/flags/'|add:region|add:'.svg' %}" alt="" class="brand-flag"> {{ conf.brand }}{% else %}🌴 GOA rent{% endif %}</a>
+                    {% if conf.moto %}<a href="{% url conf.moto %}" class="small text-muted">байки →</a>{% endif %}
                     {% if user.is_authenticated %}
                     <form method="post" action="{% url 'logout' %}" class="m-0">
                         {% csrf_token %}

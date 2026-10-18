@@ -2,7 +2,8 @@ from datetime import timedelta
 
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from ads.currency import current_currency, get_rates, to_rupees
@@ -22,10 +23,18 @@ OPTIONS = [
 
 DEFAULT_PERIOD = "30"   # байки публикуют реже, чем жильё
 
+# Регион → адреса и подписи раздела байков (байки есть в Гоа и на Пхукете)
+REGIONS = {
+    "goa": dict(list="moto:search_properties_moto", details="moto:details_moto", home="index",
+                rent="ads:search_properties", where="в Гоа"),
+    "th": dict(list="moto_th", details="details_moto_th", home="index_th", rent="rent_th",
+               brand="Пхукет", where="на Пхукете"),
+}
 
-def model_list():
+
+def model_list(region="goa"):
     return list(
-        MotoListing.objects
+        MotoListing.objects.filter(region=region)
         .exclude(model_name__isnull=True).exclude(model_name="")
         .order_by("model_name").values_list("model_name", flat=True).distinct()
     )
@@ -46,12 +55,12 @@ def get_form_data(request):
     }
 
 
-def build_queryset(form, currency):
+def build_queryset(form, currency, region="goa"):
     price_field = {"daily": "price_day", "sell": "price_sell"}.get(form["rent_period"], "price_month")
     since = timezone.now() - timedelta(days=int(form["period"]))
     rates = get_rates()
 
-    q = Q(last_seen__gte=since, closed__isnull=True) & Q(**{f"{price_field}__gt": 0})
+    q = Q(region=region, last_seen__gte=since, closed__isnull=True) & Q(**{f"{price_field}__gt": 0})
     if form["price_from"].isdigit():
         q &= Q(**{f"{price_field}__gte": to_rupees(int(form["price_from"]), currency, rates)})
     if form["price_to"].isdigit():
@@ -73,10 +82,10 @@ def build_queryset(form, currency):
     return qs, price_field
 
 
-def search_properties_moto(request):
+def search_properties_moto(request, region="goa"):
     form = get_form_data(request)
-    currency = current_currency(request)
-    queryset, price_field = build_queryset(form, currency)
+    currency = current_currency(request, region)
+    queryset, price_field = build_queryset(form, currency, region)
 
     sort = request.GET.get("sort", "fresh")
     if sort == "cheap":
@@ -94,7 +103,8 @@ def search_properties_moto(request):
 
     response = render(request, "moto.html", {
         "page_obj": page_obj,
-        "models": model_list(),
+        "models": model_list(region),
+        "conf": REGIONS[region],
         "form": form,
         "kinds": KINDS,
         "options": [(f, label) for f, _, label in OPTIONS],
@@ -103,13 +113,15 @@ def search_properties_moto(request):
         "price_field": price_field,
         "sort": sort,
         "query": params.urlencode(),
-        "seo": seo.moto_list_seo(request),
+        "seo": seo.moto_list_seo(request, region),
     })
     return remember_currency(request, response)
 
 
-def details_moto(request, item_id):
+def details_moto(request, item_id, region="goa"):
     item = get_object_or_404(MotoListing.objects.prefetch_related("photos"), pk=item_id)
+    if item.region != region:
+        return redirect(reverse(REGIONS[item.region]["details"], args=[item.pk]), permanent=True)
     options = [
         ("Шлем в комплекте", item.has_helmet),
         ("Доставка", item.has_delivery),
@@ -118,6 +130,7 @@ def details_moto(request, item_id):
     ]
     return render(request, "details_moto.html", {
         "item": item,
+        "conf": REGIONS[region],
         "seo": seo.moto_seo(item),
         "posts": item.posts.order_by("-date"),
         "options": options,

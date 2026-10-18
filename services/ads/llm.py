@@ -143,11 +143,55 @@ owners_nearby: true (явно есть), false (явно нет) или null (н
 city, village, rooms, price_month, price_day, currency. Квартиры без цены не включай.
 """
 
+# Пхукет (Таиланд): жильё и байки. Цены — в валюте объявления, в рупии переводит сервис.
+PROMPT_PHUKET = """Ты разбираешь объявления из русскоязычных Telegram-каналов Пхукета (Таиланд).
+Ответь ТОЛЬКО JSON-объектом с полями:
+
+kind: "rent" — сдаётся жильё (кондо, апартаменты, квартира, дом, вилла, комната);
+  "seek" — человек ищет жильё или байк; "bike" — сдаётся или продаётся скутер/мотоцикл;
+  "car" — аренда/продажа машины; "property_sale" — продажа недвижимости;
+  "sale" — продажа вещей; "work", "service", "exchange", "visa" — работа, услуги, обмен, визы;
+  "other" — всё остальное (реклама, туры, болтовня).
+village: район Пхукета по-русски, с большой буквы: Патонг, Карон, Ката, Ката Ной, Най Харн, Раваи,
+  Чалонг, Кату, Пхукет-таун, Кох Кео, Камала, Сурин, Банг Тао, Лагуна, Лаян, Най Тон, Най Янг,
+  Май Кхао, Таланг, Пансеа, Ао По, Панва. Чернг Талай → Банг Тао; Old Town, Phuket Town → Пхукет-таун;
+  Nai Harn → Най Харн, Rawai → Раваи. null, если район не указан.
+price_month: цена за месяц, целое число, в валюте объявления, или null. "25к", "25 000", "25k" = 25000.
+  Если указаны цены на разные сроки (6 мес, год) — бери цену за месяц при аренде на месяц;
+  если разные сезоны — цену высокого сезона (ноябрь–апрель).
+price_day: цена за сутки, целое число, в валюте объявления, или null.
+currency: валюта цены: "THB" (бат, ฿, thb, бат.), "USD" ($), "RUB" (₽, руб), "EUR" (€).
+  Если валюта не указана — "THB".
+agent_percent: комиссия агента в процентах, целое число, или null. "без комиссии" — 0.
+rooms: "room" (комната), "1bk" (студия), "1bhk" (1 спальня), "2bhk" (2 спальни), "3bhk", "4bhk+"
+  или null. Считай спальни: "1 bedroom", "1BR", "1 спальня + гостиная" = "1bhk"; "студия", "studio" = "1bk".
+many_objects: true, только если в сообщении несколько разных объектов со своими ценами.
+has_ac, has_wifi, has_fridge, has_kitchen, has_washing_machine, has_dishes, has_hot_water,
+owners_nearby: true (явно есть), false (явно нет) или null (не сказано). Бассейн — не кухня.
+
+Если kind = "bike", добавь поля:
+bike_model: марка и модель латиницей, например "Honda Click 160", "Honda PCX 160", "Yamaha NMAX 155",
+  "Honda ADV 160", "Yamaha Aerox 155", "Honda Forza 350", или null.
+bike_kind: "scooter" или "motorcycle".
+bike_year: год выпуска или null.
+price_sell: цена продажи, в валюте объявления, или null (для аренды — null).
+agent_fee: комиссия в валюте объявления или null.
+has_helmet, has_delivery, need_deposit, need_passport: true / false / null.
+  "Без залога паспорта", "без паспорта" — need_passport false. "Депозит 3000" — need_deposit true.
+Для байков village, price_month, price_day, currency, many_objects — так же, как для жилья.
+Прокат со списком моделей и цен — many_objects true.
+
+Если many_objects = true, добавь поле items — список объектов (не больше 15), в каждом только то,
+чем объекты отличаются: жильё — village, rooms, price_month, price_day, currency;
+байки — bike_model, bike_kind, price_month, price_day, price_sell, currency. Объекты без цены не включай.
+"""
+
+
 FIELDS_BOOL = ["has_ac", "has_wifi", "has_fridge", "has_kitchen", "has_washing_machine",
                "has_dishes", "has_hot_water", "owners_nearby"]
 ROOMS = {"room", "1bk", "1bhk", "2bhk", "3bhk", "4bhk+",
          "1k", "2k", "3k", "4k+"}   # последние — Армения и Грузия: считают все комнаты
-CURRENCIES = {"AMD", "GEL", "USD", "RUB", "EUR", "INR"}
+CURRENCIES = {"AMD", "GEL", "THB", "USD", "RUB", "EUR", "INR"}
 FIELDS_BIKE_BOOL = ["has_helmet", "has_delivery", "need_deposit", "need_passport"]
 ITEM_CATEGORIES = {"electronics", "home", "clothes", "kids", "sport", "beauty", "other"}
 

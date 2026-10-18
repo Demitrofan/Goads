@@ -249,3 +249,8 @@ body.region-extra .home-cards img {
 body.region-ge {
     background-image: url(../img/georgia_bg.jpg);
 }
+
+/* Пхукет: фон (пока заглушка) */
+body.region-th {
+    background-image: url(../img/phuket_bg.jpg);
+}

@@ -13,10 +13,13 @@ CACHE_SECONDS = 6 * 60 * 60
 
 # Запасные курсы на случай, если ЦБ недоступен (октябрь 2026)
 FALLBACK = {"INR": 1.0, "RUB": 0.87, "USD": 0.0104, "UAH": 0.469, "BYN": 0.0313,
-            "AMD": 4.0, "EUR": 0.0095, "GEL": 0.028}
+            "AMD": 4.0, "EUR": 0.0095, "GEL": 0.028, "THB": 0.37}
 
 # Не показываются, но нужны сборщику: цены в драмах, лари и евро → рупии
 EXTRA = ["AMD", "GEL", "EUR"]
+
+# Местная валюта региона: показывается только в нём (бат — на Пхукете)
+LOCAL = {"th": "THB"}
 
 CURRENCIES = {
     "RUB": "₽",
@@ -24,6 +27,7 @@ CURRENCIES = {
     "UAH": "₴",
     "USD": "$",
     "INR": "₹",
+    "THB": "฿",
 }
 
 # Округление при показе: рубли до сотни, гривны до десятка, остальное до единицы
@@ -56,10 +60,11 @@ def get_rates() -> dict:
 
 
 def region_currencies(region: str = "goa") -> dict:
-    """Валюты в переключателе: вне Гоа (Армения, Грузия) рупии не нужны."""
-    if region == "goa":
-        return CURRENCIES
-    return {code: sym for code, sym in CURRENCIES.items() if code != "INR"}
+    """Валюты в переключателе: рупии — только в Гоа, местная валюта (бат) — только в своём регионе."""
+    hidden = {c for r, c in LOCAL.items() if r != region}
+    if region != "goa":
+        hidden.add("INR")
+    return {code: sym for code, sym in CURRENCIES.items() if code not in hidden}
 
 
 def current_currency(request, region: str = "goa") -> str:
@@ -90,7 +95,7 @@ def price_to_rupees(amount, currency: str):
 
 
 # Начало адреса → регион; всё остальное — Гоа
-REGION_PREFIXES = {"/am/": "am", "/ge/": "ge"}
+REGION_PREFIXES = {"/am/": "am", "/ge/": "ge", "/th/": "th"}
 
 
 def region_of_path(path: str) -> str:

@@ -101,8 +101,8 @@ class AdsImage(models.Model):
 class Listing(models.Model):
     """Разобранное объявление. Дубли из разных каналов склеиваются в одно."""
 
-    GOA, ARMENIA, GEORGIA = "goa", "am", "ge"
-    REGIONS = [(GOA, "Гоа"), (ARMENIA, "Армения"), (GEORGIA, "Грузия")]
+    GOA, ARMENIA, GEORGIA, PHUKET = "goa", "am", "ge", "th"
+    REGIONS = [(GOA, "Гоа"), (ARMENIA, "Армения"), (GEORGIA, "Грузия"), (PHUKET, "Пхукет")]
 
     region = models.CharField("Регион", max_length=8, choices=REGIONS, default=GOA, db_index=True)
     # Город — только вне Гоа (Ереван, Тбилиси, Батуми…); village тогда — район внутри города (ads/places.py)

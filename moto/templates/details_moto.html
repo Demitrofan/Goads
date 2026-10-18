@@ -81,7 +81,7 @@
                     {% with photos=item.photos.all %}
                     {% if photos %}
                     <div class="main-photo-container mb-2">
-                        <img id="main-photo" src="{{ MEDIA_URL }}{{ photos.0.path }}" alt="{{ item.model_name|default:'Байк' }} в Гоа"
+                        <img id="main-photo" src="{{ MEDIA_URL }}{{ photos.0.path }}" alt="{{ item.model_name|default:'Байк' }} {{ conf.where }}"
                              onclick="this.classList.toggle('zoomed');">
                     </div>
                     {% if photos|length > 1 %}

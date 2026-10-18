@@ -81,6 +81,8 @@ REGION_SEO = {
     Listing.GEORGIA: dict(what="Аренда квартир в Тбилиси и Батуми", where="в Тбилиси и Батуми",
                           country="Грузия", home="/ge/", details="details_ge",
                           image="vendor/img/georgia_bg.jpg"),
+    Listing.PHUKET: dict(what="Аренда жилья на Пхукете", where="на Пхукете", country="Таиланд",
+                         home="/th/", details="details_th", image="vendor/img/phuket_bg.jpg"),
 }
 
 
@@ -106,7 +108,13 @@ def rent_list_seo(request):
                      "дубли из разных каналов склеены.", "vendor/img/housing.jpg")
 
 
-def moto_list_seo(request):
+def moto_list_seo(request, region="goa"):
+    if region == Listing.PHUKET:
+        seo = list_page(request, "Аренда байков на Пхукете — скутеры и мотоциклы",
+                        "Аренда и продажа байков на Пхукете из русскоязычных Telegram-каналов: "
+                        "цены за сутки и месяц.", "vendor/img/moto_th.jpg")
+        seo["noindex"] = True
+        return seo
     return list_page(request, "Аренда байков в Гоа — скутеры и мотоциклы",
                      "Аренда и продажа байков в Гоа: скутеры и мотоциклы от владельцев и прокатов "
                      "из русскоязычных Telegram-каналов. Цены за сутки и месяц, характеристики моделей.",
@@ -148,6 +156,12 @@ def moto_seo(item):
         cost = (f"{price(item.price_month)}/мес" if item.price_month
                 else f"{price(item.price_day)}/сутки" if item.price_day else "")
     where = f", {item.village}" if item.village else ""
+    if item.region == Listing.PHUKET:
+        seo = page(f"{name} — {deal.lower()}{where} | Байки на Пхукете",
+                   f"{deal} {name} на Пхукете{where}. " + item.text,
+                   reverse("details_moto_th", args=[item.pk]), noindex=True)
+        seo["image"] = photo_url(item, "vendor/img/moto_th.jpg")
+        return seo
     title = f"{name} — {deal.lower()}{where}" + (f", {cost}" if cost else "") + " | Байки в Гоа"
     description = f"{deal} {name} в Гоа{where}. " + (f"Цена {cost}. " if cost else "") + item.text
     seo = page(title, description, reverse("moto:details_moto", args=[item.pk]),
@@ -239,7 +253,7 @@ class ListingSitemap(Sitemap):
 SITEMAPS = {
     "pages": StaticSitemap(),
     "rent": ListingSitemap(Listing, "ads:details", region=Listing.GOA),
-    "moto": ListingSitemap(MotoListing, "moto:details_moto"),
+    "moto": ListingSitemap(MotoListing, "moto:details_moto", region=Listing.GOA),
     "stuff": ListingSitemap(StuffListing, "stuff:details_stuff"),
 }
 

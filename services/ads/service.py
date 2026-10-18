@@ -54,7 +54,7 @@ from ads import monitor  # noqa: E402
 from ads.currency import price_to_rupees  # noqa: E402
 from ads.places import split_place  # noqa: E402
 from ads.models import Listing, Photo, Post  # noqa: E402
-from llm import PROMPT_ARMENIA, PROMPT_GEORGIA, parse_ad  # noqa: E402
+from llm import PROMPT_ARMENIA, PROMPT_GEORGIA, PROMPT_PHUKET, parse_ad  # noqa: E402
 from moto.models import MotoListing, MotoPhoto, model_info  # noqa: E402
 from stuff.models import StuffListing, StuffPhoto  # noqa: E402
 from tg_urls import tg_urls as rent_urls  # noqa: E402
@@ -70,15 +70,16 @@ def _load_urls(path: Path) -> list:
 moto_urls = _load_urls(ROOT / "services" / "moto" / "parser" / "tg_urls.py")
 stuff_urls = _load_urls(ROOT / "services" / "stuff" / "parser" / "tg_urls.py")
 
-# Регионы кроме Гоа: свои каналы и своя подсказка GPT, только жильё, история догружается
+# Регионы кроме Гоа: свои каналы, своя подсказка GPT и разделы; история догружается
 # на MAX_AGE_DAYS_EXTRA дней назад. Новый регион — ещё одна строка и файл с каналами.
 EXTRA_REGIONS = {
-    Listing.ARMENIA: ("tg_urls_armenia.py", PROMPT_ARMENIA),
-    Listing.GEORGIA: ("tg_urls_georgia.py", PROMPT_GEORGIA),
+    Listing.ARMENIA: ("tg_urls_armenia.py", PROMPT_ARMENIA, {"rent"}),
+    Listing.GEORGIA: ("tg_urls_georgia.py", PROMPT_GEORGIA, {"rent"}),
+    Listing.PHUKET: ("tg_urls_phuket.py", PROMPT_PHUKET, {"rent", "bike"}),
 }
 REGION_CHANNELS = {}   # канал → регион (только не Гоа)
 extra_urls = []
-for _region, (_file, _) in EXTRA_REGIONS.items():
+for _region, (_file, _, _) in EXTRA_REGIONS.items():
     for u in _load_urls(ROOT / "services" / "ads" / "parser" / _file):
         extra_urls.append(u)
         REGION_CHANNELS[u.rstrip("/").rsplit("/", 1)[-1]] = _region
@@ -99,7 +100,7 @@ def ask_gpt(post, model: str):
     data = parse_ad(post.text, model, prompt=EXTRA_REGIONS[region][1])
     if data:
         for d in [data, *data["items"]]:
-            for f in ("price_month", "price_day"):
+            for f in ("price_month", "price_day", "price_sell", "agent_fee"):
                 d[f] = price_to_rupees(d[f], d["currency"])
             d["city"], d["village"] = split_place(region, d["city"], d["village"])
     return data
@@ -363,12 +364,12 @@ def find_similar_listing(data: dict, text: str, date, region=Listing.GOA):
         last_seen__gte=date - timedelta(days=DUP_WINDOW_DAYS)), text)
 
 
-def find_similar_moto(data: dict, text: str, date):
-    """Похожий байк: та же модель и цены, текст совпадает на 75%+."""
+def find_similar_moto(data: dict, text: str, date, region=Listing.GOA):
+    """Похожий байк: тот же регион, модель и цены, текст совпадает на 75%+."""
     if not data["bike_model"]:
         return None
     return _similar_text(MotoListing.objects.filter(
-        model_name=data["bike_model"], price_month=data["price_month"],
+        region=region, model_name=data["bike_model"], price_month=data["price_month"],
         price_day=data["price_day"], price_sell=data["price_sell"],
         last_seen__gte=date - timedelta(days=DUP_WINDOW_DAYS)), text)
 
@@ -389,8 +390,8 @@ def trash_reason(data: dict, region=Listing.GOA) -> str:
     kind = data["kind"]
     if kind not in SECTIONS:
         return kind
-    if region != Listing.GOA and kind != "rent":
-        return f"{region}_{kind}"   # в Армении и Грузии пока только жильё
+    if region != Listing.GOA and kind not in EXTRA_REGIONS[region][2]:
+        return f"{region}_{kind}"   # в Армении и Грузии пока только жильё, на Пхукете — жильё и байки
     if data["many_objects"] and not any(not trash_reason(it, region) for it in data["items"]):
         # список, из которого не вышло ни одной годной позиции
         return {"rent": "many_objects", "bike": "bike_many", "sale": "sale_many"}[kind]
@@ -447,7 +448,7 @@ def create_listing(post: Post, data: dict):
     if data["kind"] == "bike":
         spec = bike_specs(data["bike_model"])
         return MotoListing.objects.create(
-            model_name=data["bike_model"], kind=data["bike_kind"], year=data["bike_year"],
+            region=region_of(post), model_name=data["bike_model"], kind=data["bike_kind"], year=data["bike_year"],
             engine=spec.engine if spec else None,
             horse_power=spec.horse_power if spec else None,
             weight=spec.weight if spec else None,
@@ -533,8 +534,8 @@ def process_new(model: str, limit: int | None = None) -> list:
                  if data["many_objects"] else [data])
         is_new = False
         for item in items:
-            if item["kind"] == "rent":
-                similar = find_similar_listing(item, post.text, post.date, region)
+            if item["kind"] in ("rent", "bike"):
+                similar = FIND_SIMILAR[item["kind"]](item, post.text, post.date, region)
             else:
                 similar = FIND_SIMILAR[item["kind"]](item, post.text, post.date)
             if similar:
