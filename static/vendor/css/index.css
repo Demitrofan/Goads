@@ -257,3 +257,13 @@ body.region-th {
     background-image: url(../img/phuket_bg.jpg?v=3);
     background-position: center top;
 }
+
+/* Пхукет, компьютер: карточки в исходных пропорциях — без обрезки (у байка видно заднее колесо) */
+@media (min-width: 768px) {
+    body.region-th .home-cards img {
+        width: auto;
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+    }
+}
