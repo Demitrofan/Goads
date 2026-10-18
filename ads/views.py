@@ -70,10 +70,10 @@ HOME_CARDS = {
     Listing.ARMENIA: dict(housing="vendor/img/housing_am.jpg", moto="vendor/img/moto_am.jpg",
                           stuff="vendor/img/stuff_am.jpg", v=3),   # v — сменить при замене картинок
     Listing.GEORGIA: dict(housing="vendor/img/housing_ge.jpg", moto="vendor/img/moto_ge.jpg",
-                          stuff="vendor/img/stuff_ge.jpg", v=1),
+                          stuff="vendor/img/stuff_ge.jpg", v=2),
     # moto_list — у байков есть страница (на Пхукете), иначе карточка «Скоро»
     Listing.PHUKET: dict(housing="vendor/img/housing_th.jpg", moto="vendor/img/moto_th.jpg",
-                         stuff="vendor/img/stuff_th.jpg", moto_list="moto_th", v=1),
+                         stuff="vendor/img/stuff_th.jpg", moto_list="moto_th", v=2),
 }
 
 AMENITIES = [

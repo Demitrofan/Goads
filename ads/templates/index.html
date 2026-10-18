@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {% block css %}
-    <link href="{% static 'vendor/css/index.css'%}?v=21" rel="stylesheet">
+    <link href="{% static 'vendor/css/index.css'%}?v=23" rel="stylesheet">
     <link href="{% static 'vendor/css/jaipur.ttf'%}" rel="stylesheet">
     {% endblock %}
     <style>
@@ -91,13 +91,14 @@
             </div>
         </div>
     </div>
-    {% if region == 'am' %}
+    {% if region == 'am' or region == 'th' %}
     <script>
-        // Фон Армении (1536×1024) растянут на весь экран и обрезается сверху/снизу.
-        // Сдвигаем его так, чтобы буквы ARMENIA (на картинке y 134–220, центр 177)
-        // встала между флажками и карточками при любом размере окна.
+        // Фон с надписью (Армения — ARMENIA, Пхукет — «Пхукет») растянут на весь экран и обрезается
+        // сверху/снизу. Сдвигаем его так, чтобы надпись встала между флажками и карточками
+        // при любом размере окна. Размер картинки и где на ней надпись (y верха и центра):
         (function () {
-            var IMG_W = 1536, IMG_H = 1024, TITLE_TOP = 134, TITLE_MID = 177;
+            var BG = {am: [1536, 1024, 134, 177], th: [1821, 864, 60, 130]}['{{ region }}'];
+            var IMG_W = BG[0], IMG_H = BG[1], TITLE_TOP = BG[2], TITLE_MID = BG[3];
             function place() {
                 var w = window.innerWidth, h = window.innerHeight;
                 var flags = document.querySelector('.region-flags');

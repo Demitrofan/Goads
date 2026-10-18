@@ -232,25 +232,28 @@ body.region-extra .home-cards img {
     border: 3px solid #fff;
 }
 
-/* Армения, компьютер: карточки ниже — сверху место для надписи ARMENIA на фоне */
+/* Армения, Пхукет, компьютер: карточки ниже — сверху место для надписи на фоне */
 @media (min-width: 768px) {
-    body.region-am .home-cards {
+    body.region-am .home-cards,
+    body.region-th .home-cards {
         align-items: flex-end;
     }
 
     /* на низком экране ноутбука карточки чуть ниже ростом, чтобы надпись не пряталась за ними;
        на обычном мониторе размер как в Гоа */
-    body.region-am .container img {
+    body.region-am .container img,
+    body.region-th .container img {
         height: min(65vh, 500px, calc(100vh - 270px));
     }
 }
 
-/* Грузия: фон (пока заглушка) */
+/* Грузия: свой фон */
 body.region-ge {
-    background-image: url(../img/georgia_bg.jpg);
+    background-image: url(../img/georgia_bg.jpg?v=2);
 }
 
-/* Пхукет: фон (пока заглушка) */
+/* Пхукет: свой фон; по вертикали сдвигает скрипт в index.html (надпись «Пхукет») */
 body.region-th {
-    background-image: url(../img/phuket_bg.jpg);
+    background-image: url(../img/phuket_bg.jpg?v=2);
+    background-position: center top;
 }
