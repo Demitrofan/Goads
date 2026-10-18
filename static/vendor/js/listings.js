@@ -55,11 +55,12 @@ document.querySelectorAll('.sort-btn').forEach(btn => {
 });
 
 // Город → район (Армения, Грузия): в меню районов только районы выбранного города,
-// у города без районов меню районов скрыто. Смена города сбрасывает чужой район.
+// у города без районов меню остаётся на месте, но неактивно. Смена города сбрасывает чужой район.
 (() => {
     const city = document.getElementById('city-select');
     const village = document.getElementById('village-select');
     if (!city || !village) return;
+    const all = village.options[0];
     const apply = () => {
         let shown = 0;
         for (const opt of village.options) {
@@ -69,7 +70,8 @@ document.querySelectorAll('.sort-btn').forEach(btn => {
             if (ok) shown++;
             else if (opt.selected) village.value = '';
         }
-        document.getElementById('village-block').hidden = shown === 0;
+        village.disabled = shown === 0;
+        all.textContent = shown === 0 ? 'нет районов' : 'Все';
     };
     city.addEventListener('change', apply);   // раньше общего обработчика формы, который её отправит
     apply();
