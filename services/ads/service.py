@@ -51,7 +51,7 @@ from telethon.tl.types import InputPeerChannel, MessageMediaDocument, MessageMed
 
 from ads.currency import price_to_rupees  # noqa: E402
 from ads.models import Listing, Photo, Post  # noqa: E402
-from llm import PROMPT_ARMENIA, parse_ad  # noqa: E402
+from llm import PROMPT_ARMENIA, PROMPT_GEORGIA, parse_ad  # noqa: E402
 from moto.models import MotoListing, MotoPhoto, model_info  # noqa: E402
 from stuff.models import StuffListing, StuffPhoto  # noqa: E402
 from tg_urls import tg_urls as rent_urls  # noqa: E402
@@ -66,22 +66,34 @@ def _load_urls(path: Path) -> list:
 # Каналы жилья, байков и барахолки собираются вместе: GPT сам решает, что это за объявление
 moto_urls = _load_urls(ROOT / "services" / "moto" / "parser" / "tg_urls.py")
 stuff_urls = _load_urls(ROOT / "services" / "stuff" / "parser" / "tg_urls.py")
-armenia_urls = _load_urls(ROOT / "services" / "ads" / "parser" / "tg_urls_armenia.py")
-tg_urls = list(dict.fromkeys(u.rstrip("/") for u in rent_urls + moto_urls + stuff_urls + armenia_urls))
 
-# Канал → регион. Каналы Армении разбираются своей подсказкой GPT и дают только жильё.
-ARMENIA_CHANNELS = {u.rstrip("/").rsplit("/", 1)[-1] for u in armenia_urls}
+# Регионы кроме Гоа: свои каналы и своя подсказка GPT, только жильё, история догружается
+# на MAX_AGE_DAYS_EXTRA дней назад. Новый регион — ещё одна строка и файл с каналами.
+EXTRA_REGIONS = {
+    Listing.ARMENIA: ("tg_urls_armenia.py", PROMPT_ARMENIA),
+    Listing.GEORGIA: ("tg_urls_georgia.py", PROMPT_GEORGIA),
+}
+REGION_CHANNELS = {}   # канал → регион (только не Гоа)
+extra_urls = []
+for _region, (_file, _) in EXTRA_REGIONS.items():
+    for u in _load_urls(ROOT / "services" / "ads" / "parser" / _file):
+        extra_urls.append(u)
+        REGION_CHANNELS[u.rstrip("/").rsplit("/", 1)[-1]] = _region
+EXTRA_CHANNELS = set(REGION_CHANNELS)
+
+tg_urls = list(dict.fromkeys(u.rstrip("/") for u in rent_urls + moto_urls + stuff_urls + extra_urls))
 
 
 def region_of(post) -> str:
-    return Listing.ARMENIA if post.channel in ARMENIA_CHANNELS else Listing.GOA
+    return REGION_CHANNELS.get(post.channel, Listing.GOA)
 
 
 def ask_gpt(post, model: str):
-    """Разбор сообщения; цены армянских объявлений переводятся в рупии, как всё в базе."""
-    if region_of(post) == Listing.GOA:
+    """Разбор сообщения; цены объявлений не из Гоа переводятся в рупии, как всё в базе."""
+    region = region_of(post)
+    if region == Listing.GOA:
         return parse_ad(post.text, model)
-    data = parse_ad(post.text, model, prompt=PROMPT_ARMENIA)
+    data = parse_ad(post.text, model, prompt=EXTRA_REGIONS[region][1])
     if data:
         for d in [data, *data["items"]]:
             for f in ("price_month", "price_day"):
@@ -113,8 +125,8 @@ FIRST_RUN_DAYS = 2           # сколько дней истории забра
 MIN_TEXT_LEN = 60            # короче — точно не объявление
 DUP_WINDOW_DAYS = 30         # окно поиска дублей
 MAX_AGE_DAYS = 7             # сообщения старше — не разбираем (неактуальны), помечаем мусором "old"
-MAX_AGE_DAYS_ARMENIA = 14    # в Ереване сдают надолго — объявления живут дольше
-BACKFILL_BATCH = 100         # догрузка истории Армении: сообщений с канала за цикл (один запрос)
+MAX_AGE_DAYS_EXTRA = 14      # Армения, Грузия: сдают надолго — объявления живут дольше
+BACKFILL_BATCH = 100         # догрузка истории Армении и Грузии: сообщений с канала за цикл (один запрос)
 LLM_WORKERS = 8              # сколько сообщений отправлять в GPT одновременно
 MAX_PHOTOS = 6
 RENT_MIN_MONTH = 3000            # жильё дешевле ₹/мес — ошибка в цене, в мусор
@@ -255,11 +267,11 @@ _backfill_from = {}   # канал → с какого id читать исто�
 
 
 def backfill(client, peers: dict, media: dict):
-    """Армения: понемногу дочитывает историю назад до MAX_AGE_DAYS_ARMENIA — по одному запросу
+    """Армения, Грузия: понемногу дочитывает историю назад до MAX_AGE_DAYS_EXTRA — по одному запросу
     на канал за цикл, чтобы не нагружать Telegram."""
-    since = datetime.now(timezone.utc) - timedelta(days=MAX_AGE_DAYS_ARMENIA)
+    since = datetime.now(timezone.utc) - timedelta(days=MAX_AGE_DAYS_EXTRA)
     total = 0
-    for name in sorted(ARMENIA_CHANNELS & peers.keys()):
+    for name in sorted(EXTRA_CHANNELS & peers.keys()):
         if name not in _backfill_from:
             _backfill_from[name] = Post.objects.filter(channel=name).aggregate(m=Min("msg_id"))["m"]
         offset = _backfill_from[name]
@@ -367,7 +379,7 @@ def trash_reason(data: dict, region=Listing.GOA) -> str:
     if kind not in SECTIONS:
         return kind
     if region != Listing.GOA and kind != "rent":
-        return f"{region}_{kind}"   # в Армении пока только жильё
+        return f"{region}_{kind}"   # в Армении и Грузии пока только жильё
     if data["many_objects"] and not any(not trash_reason(it, region) for it in data["items"]):
         # список, из которого не вышло ни одной годной позиции
         return {"rent": "many_objects", "bike": "bike_many", "sale": "sale_many"}[kind]
@@ -466,7 +478,7 @@ def process_new(model: str, limit: int | None = None) -> list:
     pending = Post.objects.filter(status__in=[Post.NEW, Post.ERROR])
     now = datetime.now(timezone.utc)
     old = (pending.filter(date__lt=now - timedelta(days=MAX_AGE_DAYS))
-           .exclude(channel__in=ARMENIA_CHANNELS, date__gte=now - timedelta(days=MAX_AGE_DAYS_ARMENIA)))
+           .exclude(channel__in=EXTRA_CHANNELS, date__gte=now - timedelta(days=MAX_AGE_DAYS_EXTRA)))
     stats["trash"] += old.update(status=Post.TRASH, trash_reason="old")
 
     # ERROR тоже берём: повторная попытка после сбоя OpenRouter

@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {% block css %}
-    <link href="{% static 'vendor/css/index.css'%}?v=19" rel="stylesheet">
+    <link href="{% static 'vendor/css/index.css'%}?v=20" rel="stylesheet">
     <link href="{% static 'vendor/css/jaipur.ttf'%}" rel="stylesheet">
     {% endblock %}
     <style>
@@ -27,7 +27,7 @@
         }
     </style>
 
-    {% if region == 'am' %}
+    {% if cards %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
@@ -35,23 +35,24 @@
     {% include "metrika.html" %}
 </head>
 
-<body{% if region == 'am' %} class="region-am"{% endif %}>
+{# region-extra — любой регион кроме Гоа (Армения, Грузия): общий вид главной #}
+<body{% if cards %} class="region-extra region-{{ region }}"{% endif %}>
     {% include "flags.html" %}
     <div class="container home-cards">
         <div class="row w-100">
             <div class="col-md-4">
-                <a href="{% if region == 'am' %}{% url 'rent_am' %}{% else %}{% url 'ads:search_properties' %}{% endif %}">
-                    <img src="{% if region == 'am' %}{% static 'vendor/img/housing_am.jpg' %}?v=3{% else %}{% static 'vendor/img/housing.jpg' %}{% endif %}" class="img-fluid" alt="Жильё">
+                <a href="{% if cards %}{% url conf.list %}{% else %}{% url 'ads:search_properties' %}{% endif %}">
+                    <img src="{% if cards %}{% static cards.housing %}?v={{ cards.v }}{% else %}{% static 'vendor/img/housing.jpg' %}{% endif %}" class="img-fluid" alt="Жильё">
                 </a>
             </div>
-            {% if region == 'am' %}
-            {# В Армении пока только жильё: остальные разделы без ссылки, «Скоро» при наведении #}
+            {% if cards %}
+            {# В Армении и Грузии пока только жильё: остальные разделы без ссылки, «Скоро» при наведении #}
             <div class="col-md-4 soon">
-                <img src="{% static 'vendor/img/moto_am.jpg' %}?v=3" class="img-fluid" alt="Байки — скоро">
+                <img src="{% static cards.moto %}?v={{ cards.v }}" class="img-fluid" alt="Байки — скоро">
                 <span>Скоро</span>
             </div>
             <div class="col-md-4 soon">
-                <img src="{% static 'vendor/img/stuff_am.jpg' %}?v=3" class="img-fluid" alt="Барахолка — скоро">
+                <img src="{% static cards.stuff %}?v={{ cards.v }}" class="img-fluid" alt="Барахолка — скоро">
                 <span>Скоро</span>
             </div>
             {% else %}
@@ -73,7 +74,7 @@
             <div class="col-12">
                 <p class="text-justify mb-0">
                     Дисклеймер: автор данного сервиса не несет ответственности за достоверность и актуальность информации,
-                    размещенной в представленных объявлениях. Все объявления собираются автоматически из телеграм-каналов {% if region == 'am' %}Армении{% else %}Гоа{% endif %} и систематизируются при помощи нейросети. Это
+                    размещенной в представленных объявлениях. Все объявления собираются автоматически из телеграм-каналов {{ conf.of|default:"Гоа" }} и систематизируются при помощи нейросети. Это
                     обеспечивает удобство при просмотре и поиске информации. В каждом объявлении обязательно приведена ссылка на источник, чтобы пользователи могли проверить
                     дополнительные детали.
                     Если вы владелец Telegram-канала, объявления из которого публикуются на сайте, и не хотите этого,

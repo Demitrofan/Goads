@@ -19,7 +19,7 @@ ROOMS = [
     ("4bhk+", "4+ BHK"),
 ]
 
-# В Армении считают все комнаты: «2-комнатная» — гостиная и спальня
+# В Армении и Грузии считают все комнаты: «2-комнатная» — гостиная и спальня
 ROOMS_ARMENIA = [
     ("room", "Комната"),
     ("1k", "1-комнатная"),
@@ -28,12 +28,26 @@ ROOMS_ARMENIA = [
     ("4k+", "4+ комнат"),
 ]
 
-# Регион → что отличается на страницах жилья: адреса, комнаты, подписи
+# Регион → что отличается на страницах жилья: адреса, комнаты, подписи.
+# brand — название в шапке списка, where — «где» в подписях, of — «каналов чего» на главной.
 REGIONS = {
     Listing.GOA: dict(rooms=ROOMS, home="index", list="ads:search_properties",
-                      details="ads:details", place="Населённый пункт", period="7"),
+                      details="ads:details", place="Населённый пункт", period="7",
+                      where="в Гоа", of="Гоа"),
     Listing.ARMENIA: dict(rooms=ROOMS_ARMENIA, home="index_am", list="rent_am",
-                          details="details_am", place="Район", period="14"),
+                          details="details_am", place="Район", period="14",
+                          brand="Ереван", where="в Ереване", of="Армении"),
+    Listing.GEORGIA: dict(rooms=ROOMS_ARMENIA, home="index_ge", list="rent_ge",
+                          details="details_ge", place="Район / город", period="14",
+                          brand="Грузия", where="в Грузии", of="Грузии"),
+}
+
+# Главная регионов кроме Гоа: картинки карточек (пока работает только жильё)
+HOME_CARDS = {
+    Listing.ARMENIA: dict(housing="vendor/img/housing_am.jpg", moto="vendor/img/moto_am.jpg",
+                          stuff="vendor/img/stuff_am.jpg", v=3),   # v — сменить при замене картинок
+    Listing.GEORGIA: dict(housing="vendor/img/housing_ge.jpg", moto="vendor/img/moto_ge.jpg",
+                          stuff="vendor/img/stuff_ge.jpg", v=1),
 }
 
 AMENITIES = [
@@ -111,8 +125,9 @@ def index(request):
     return render(request, "index.html", {"seo": seo.index_seo()})
 
 
-def index_armenia(request):
-    return render(request, "index.html", {"seo": seo.index_armenia_seo()})
+def index_region(request, region):
+    return render(request, "index.html", {"seo": seo.index_region_seo(region), "conf": REGIONS[region],
+                                          "cards": HOME_CARDS[region]})
 
 
 def search_properties(request, region=Listing.GOA):
@@ -149,7 +164,7 @@ def search_properties(request, region=Listing.GOA):
         "price_field": price_field,
         "sort": sort,
         "query": params.urlencode(),
-        "seo": seo.rent_list_seo(request) if region == Listing.GOA else seo.rent_list_armenia_seo(request),
+        "seo": seo.rent_list_seo(request) if region == Listing.GOA else seo.rent_list_region_seo(request, region),
     })
     return remember_currency(request, response)
 

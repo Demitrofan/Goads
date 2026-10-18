@@ -8,15 +8,15 @@ from django.core.cache import cache
 from django.utils.safestring import mark_safe
 
 CBR_URL = "https://www.cbr-xml-daily.ru/daily_json.js"
-CACHE_KEY = "inr_rates_v2"
+CACHE_KEY = "inr_rates_v3"
 CACHE_SECONDS = 6 * 60 * 60
 
 # Запасные курсы на случай, если ЦБ недоступен (октябрь 2026)
 FALLBACK = {"INR": 1.0, "RUB": 0.87, "USD": 0.0104, "UAH": 0.469, "BYN": 0.0313,
-            "AMD": 4.0, "EUR": 0.0095}
+            "AMD": 4.0, "EUR": 0.0095, "GEL": 0.028}
 
-# Не показываются, но нужны сборщику: цены армянских объявлений в драмах и евро → рупии
-EXTRA = ["AMD", "EUR"]
+# Не показываются, но нужны сборщику: цены в драмах, лари и евро → рупии
+EXTRA = ["AMD", "GEL", "EUR"]
 
 CURRENCIES = {
     "RUB": "₽",
@@ -56,7 +56,7 @@ def get_rates() -> dict:
 
 
 def region_currencies(region: str = "goa") -> dict:
-    """Валюты в переключателе: в Армении рупии не нужны."""
+    """Валюты в переключателе: вне Гоа (Армения, Грузия) рупии не нужны."""
     if region == "goa":
         return CURRENCIES
     return {code: sym for code, sym in CURRENCIES.items() if code != "INR"}
@@ -89,9 +89,17 @@ def price_to_rupees(amount, currency: str):
     return round(amount / rates[currency])
 
 
+# Начало адреса → регион; всё остальное — Гоа
+REGION_PREFIXES = {"/am/": "am", "/ge/": "ge"}
+
+
+def region_of_path(path: str) -> str:
+    return next((r for prefix, r in REGION_PREFIXES.items() if path.startswith(prefix)), "goa")
+
+
 def context(request):
     """Контекст-процессор: валюта и курсы доступны во всех шаблонах."""
-    region = "am" if request.path.startswith("/am/") else "goa"
+    region = region_of_path(request.path)
     cur = current_currency(request, region)
     return {
         "region": region,

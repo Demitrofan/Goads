@@ -65,7 +65,7 @@
                     {% with photos=item.photos.all %}
                     {% if photos %}
                     <div class="main-photo-container mb-2">
-                        <img id="main-photo" src="{{ MEDIA_URL }}{{ photos.0.path }}" alt="{{ room_label|default:'Жильё' }}{% if item.village %}, {{ item.village }}{% endif %} — аренда{% if region == 'am' %} в Ереване{% else %} в Гоа{% endif %}"
+                        <img id="main-photo" src="{{ MEDIA_URL }}{{ photos.0.path }}" alt="{{ room_label|default:'Жильё' }}{% if item.village %}, {{ item.village }}{% endif %} — аренда {{ conf.where }}"
                              onclick="this.classList.toggle('zoomed');">
                     </div>
                     {% if photos|length > 1 %}

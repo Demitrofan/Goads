@@ -101,8 +101,8 @@ class AdsImage(models.Model):
 class Listing(models.Model):
     """Разобранное объявление. Дубли из разных каналов склеиваются в одно."""
 
-    GOA, ARMENIA = "goa", "am"
-    REGIONS = [(GOA, "Гоа"), (ARMENIA, "Армения")]
+    GOA, ARMENIA, GEORGIA = "goa", "am", "ge"
+    REGIONS = [(GOA, "Гоа"), (ARMENIA, "Армения"), (GEORGIA, "Грузия")]
 
     region = models.CharField("Регион", max_length=8, choices=REGIONS, default=GOA, db_index=True)
     village = models.CharField("Посёлок", max_length=100, null=True, blank=True, db_index=True)

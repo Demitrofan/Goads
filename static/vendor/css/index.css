@@ -181,29 +181,29 @@ body.region-am {
     outline: 2px solid #fff;
 }
 
-/* На фото Еревана дисклеймер теряется: светлая подложка */
-body.region-am .home-disclaimer p {
+/* Армения, Грузия: на ярком фоне дисклеймер теряется — светлая подложка */
+body.region-extra .home-disclaimer p {
     background: rgba(255, 255, 255, 0.8);
     border-radius: 8px;
     padding: 8px 12px;
 }
 
-/* Армения: подписи при наведении — рукописный шрифт (кириллицы в армянском стиле нет) */
-body.region-am .col-md-4::after {
+/* Армения, Грузия: подписи при наведении — рукописный шрифт */
+body.region-extra .col-md-4::after {
     font-family: 'Caveat', cursive;
     font-weight: 700;
 }
 
-/* Армения, «Скоро»: карточка цветная и увеличивается как остальные, «Скоро» — при наведении */
-body.region-am .soon img {
+/* Армения, Грузия, «Скоро»: карточка цветная и увеличивается как остальные, «Скоро» — при наведении */
+body.region-extra .soon img {
     filter: none;
 }
 
-body.region-am .soon .img-fluid:hover {
+body.region-extra .soon .img-fluid:hover {
     transform: scale(1.12);
 }
 
-body.region-am .soon span {
+body.region-extra .soon span {
     z-index: 1;
     font-family: 'Caveat', cursive;
     font-size: 3.3rem;
@@ -212,23 +212,23 @@ body.region-am .soon span {
     pointer-events: none;   /* наведение доходит до картинки — она увеличивается */
 }
 
-body.region-am .soon:hover span {
+body.region-extra .soon:hover span {
     opacity: 1;
 }
 
 /* телефон (наведения нет): «Скоро» видно сразу, картинка чуть темнее */
 @media (hover: none) {
-    body.region-am .soon span {
+    body.region-extra .soon span {
         opacity: 1;
     }
 
-    body.region-am .soon img {
+    body.region-extra .soon img {
         filter: brightness(0.6);
     }
 }
 
-/* Армения: белая рамка, чтобы карточки не сливались с ярким фоном */
-body.region-am .home-cards img {
+/* Армения, Грузия: белая рамка, чтобы карточки не сливались с ярким фоном */
+body.region-extra .home-cards img {
     border: 3px solid #fff;
 }
 
@@ -243,4 +243,9 @@ body.region-am .home-cards img {
     body.region-am .container img {
         height: min(65vh, 500px, calc(100vh - 270px));
     }
+}
+
+/* Грузия: фон (пока заглушка) */
+body.region-ge {
+    background-image: url(../img/georgia_bg.jpg);
 }

@@ -73,17 +73,27 @@ def index_seo():
                 "аренда и продажа байков, барахолка. Фильтры по цене и посёлку.", "/")
 
 
-# Армения — пробная версия: от поисковиков пока закрыта (noindex), в карту сайта не входит
-def index_armenia_seo():
-    return page("Аренда квартир в Ереване — GOA доска",
-                "Объявления об аренде квартир в Ереване из русскоязычных Telegram-каналов "
-                "в одном месте.", "/am/", image="vendor/img/armenia.jpg", noindex=True)
+# Армения, Грузия — пробные версии: от поисковиков пока закрыты (noindex), в карту сайта не входят
+REGION_SEO = {
+    Listing.ARMENIA: dict(what="Аренда квартир в Ереване", where="в Ереване", country="Армения",
+                          home="/am/", details="details_am", image="vendor/img/armenia.jpg"),
+    Listing.GEORGIA: dict(what="Аренда квартир в Тбилиси и Батуми", where="в Тбилиси и Батуми",
+                          country="Грузия", home="/ge/", details="details_ge",
+                          image="vendor/img/georgia_bg.jpg"),
+}
 
 
-def rent_list_armenia_seo(request):
-    seo = list_page(request, "Аренда квартир в Ереване",
-                    "Аренда квартир в Ереване из русскоязычных Telegram-каналов: цены, фото, районы.",
-                    "vendor/img/armenia.jpg")
+def index_region_seo(region):
+    r = REGION_SEO[region]
+    return page(f"{r['what']} — GOA доска",
+                f"Объявления об аренде квартир {r['where']} из русскоязычных Telegram-каналов "
+                "в одном месте.", r["home"], image=r["image"], noindex=True)
+
+
+def rent_list_region_seo(request, region):
+    r = REGION_SEO[region]
+    seo = list_page(request, r["what"],
+                    f"{r['what']} из русскоязычных Telegram-каналов: цены, фото, районы.", r["image"])
     seo["noindex"] = True
     return seo
 
@@ -114,11 +124,12 @@ def rent_seo(item, room_label):
     what = room_label or "Жильё"
     cost = (f"{price(item.price_month)}/мес" if item.price_month
             else f"{price(item.price_day)}/сутки" if item.price_day else "")
-    if item.region == Listing.ARMENIA:
-        title = f"{what}{where}" + " | Аренда квартир в Ереване"
-        seo = page(title, f"Аренда: {what}{where}, Армения. " + item.text,
-                   reverse("details_am", args=[item.pk]), noindex=True)
-        seo["image"] = photo_url(item, "vendor/img/armenia.jpg")
+    if item.region in REGION_SEO:
+        r = REGION_SEO[item.region]
+        title = f"{what}{where} | {r['what']}"
+        seo = page(title, f"Аренда: {what}{where}, {r['country']}. " + item.text,
+                   reverse(r["details"], args=[item.pk]), noindex=True)
+        seo["image"] = photo_url(item, r["image"])
         return seo
     title = f"{what}{where}" + (f" — {cost}" if cost else "") + " | Аренда жилья в Гоа"
     description = f"Аренда: {what}{where}, Гоа. " + (f"Цена {cost}. " if cost else "") + item.text

@@ -7,4 +7,7 @@
     <a href="{% url 'index_am' %}" title="Ереван, Армения" class="{% if region == 'am' %}active{% endif %}">
         <img src="{% static 'vendor/img/flags/am.svg' %}" alt="Армения">
     </a>
+    <a href="{% url 'index_ge' %}" title="Тбилиси и Батуми, Грузия" class="{% if region == 'ge' %}active{% endif %}">
+        <img src="{% static 'vendor/img/flags/ge.svg' %}" alt="Грузия">
+    </a>
 </nav>
