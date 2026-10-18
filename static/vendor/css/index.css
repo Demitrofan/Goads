@@ -130,6 +130,12 @@ img {
 .text-justify {
     text-align: justify;
 }
+/* Гоа: свой фон с логотипом; по вертикали сдвигает скрипт в index.html */
+body.region-goa {
+    background-image: url(../img/goa_bg.jpg);
+    background-position: center top;
+}
+
 /* Армения: свой фон */
 body.region-am {
     background-image: url(../img/armenia_bg.jpg?v=3);
@@ -232,8 +238,9 @@ body.region-extra .home-cards img {
     border: 3px solid #fff;
 }
 
-/* Армения, Грузия, Пхукет, компьютер: карточки ниже — сверху место для надписи на фоне */
+/* Гоа, Армения, Грузия, Пхукет, компьютер: карточки ниже — сверху место для надписи на фоне */
 @media (min-width: 768px) {
+    body.region-goa .home-cards,
     body.region-am .home-cards,
     body.region-ge .home-cards,
     body.region-th .home-cards {
@@ -242,6 +249,7 @@ body.region-extra .home-cards img {
 
     /* на низком экране ноутбука карточки чуть ниже ростом, чтобы надпись не пряталась за ними;
        на обычном мониторе размер как в Гоа */
+    body.region-goa .container img,
     body.region-am .container img,
     body.region-ge .container img,
     body.region-th .container img {
@@ -261,8 +269,9 @@ body.region-th {
     background-position: center top;
 }
 
-/* Пхукет, компьютер: карточки в исходных пропорциях — без обрезки (у байка видно заднее колесо) */
+/* Гоа, Пхукет, компьютер: карточки в исходных пропорциях — без обрезки (у байка видно заднее колесо) */
 @media (min-width: 768px) {
+    body.region-goa .home-cards img,
     body.region-th .home-cards img {
         width: auto;
         max-width: 100%;

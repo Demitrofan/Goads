@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {% block css %}
-    <link href="{% static 'vendor/css/index.css'%}?v=27" rel="stylesheet">
+    <link href="{% static 'vendor/css/index.css'%}?v=28" rel="stylesheet">
     <link href="{% static 'vendor/css/jaipur.ttf'%}" rel="stylesheet">
     {% endblock %}
     <style>
@@ -35,14 +35,14 @@
     {% include "metrika.html" %}
 </head>
 
-{# region-extra — любой регион кроме Гоа (Армения, Грузия): общий вид главной #}
-<body{% if cards %} class="region-extra region-{{ region }}"{% endif %}>
+{# region-extra — любой регион кроме Гоа: общий вид главной; region-<код> — фон региона #}
+<body class="{% if cards %}region-extra {% endif %}region-{{ region }}">
     {% include "flags.html" %}
     <div class="container home-cards">
         <div class="row w-100">
             <div class="col-md-4">
                 <a href="{% if cards %}{% url conf.list %}{% else %}{% url 'ads:search_properties' %}{% endif %}">
-                    <img src="{% if cards %}{% static cards.housing %}?v={{ cards.v }}{% else %}{% static 'vendor/img/housing.jpg' %}{% endif %}" class="img-fluid" alt="Жильё">
+                    <img src="{% if cards %}{% static cards.housing %}?v={{ cards.v }}{% else %}{% static 'vendor/img/housing.jpg' %}?v=2{% endif %}" class="img-fluid" alt="Жильё">
                 </a>
             </div>
             {% if cards %}
@@ -66,12 +66,12 @@
             {% else %}
             <div class="col-md-4">
                 <a href="{% url 'moto:search_properties_moto' %}">
-                    <img src="{% static 'vendor/img/moto.jpg' %}" class="img-fluid" alt="Байки">
+                    <img src="{% static 'vendor/img/moto.jpg' %}?v=2" class="img-fluid" alt="Байки">
                 </a>
             </div>
             <div class="col-md-4">
                 <a href="{% url 'stuff:search_properties_stuff' %}">
-                    <img src="{% static 'vendor/img/stuff.jpg' %}" class="img-fluid" alt="Барахолка">
+                    <img src="{% static 'vendor/img/stuff.jpg' %}?v=2" class="img-fluid" alt="Барахолка">
                 </a>
             </div>
             {% endif %}
@@ -91,14 +91,14 @@
             </div>
         </div>
     </div>
-    {% if region == 'am' or region == 'ge' or region == 'th' %}
+    {% if region in 'goa am ge th' %}
     <script>
-        // Фон с логотипом (Армения, Грузия, Пхукет) растянут на весь экран и обрезается сверху/снизу.
+        // Фон с логотипом (Гоа, Армения, Грузия, Пхукет) растянут на весь экран и обрезается сверху/снизу.
         // Сдвигаем его так, чтобы логотип встал между флажками и карточками; если места не хватает
         // (широкий невысокий экран) — карточки становятся ниже ростом. Размер картинки и где на ней
         // логотип: y верха, центра и низа.
         (function () {
-            var BG = {am: [1536, 1024, 40, 105, 165], ge: [1536, 1024, 42, 118, 190],
+            var BG = {goa: [1536, 1024, 40, 120, 205], am: [1536, 1024, 40, 105, 165], ge: [1536, 1024, 42, 118, 190],
                       th: [1821, 864, 40, 92, 140]}['{{ region }}'];
             var IMG_W = BG[0], IMG_H = BG[1], TITLE_TOP = BG[2], TITLE_MID = BG[3], TITLE_BOTTOM = BG[4];
             var GAP = 12, MIN_CARD = 240;
