@@ -93,24 +93,36 @@
     </div>
     {% if region == 'am' or region == 'ge' or region == 'th' %}
     <script>
-        // Фон с надписью (Армения, Грузия, Пхукет — логотип с названием) растянут на весь экран и обрезается
-        // сверху/снизу. Сдвигаем его так, чтобы надпись встала между флажками и карточками
-        // при любом размере окна. Размер картинки и где на ней надпись (y верха и центра):
+        // Фон с логотипом (Армения, Грузия, Пхукет) растянут на весь экран и обрезается сверху/снизу.
+        // Сдвигаем его так, чтобы логотип встал между флажками и карточками; если места не хватает
+        // (широкий невысокий экран) — карточки становятся ниже ростом. Размер картинки и где на ней
+        // логотип: y верха, центра и низа.
         (function () {
-            var BG = {am: [1536, 1024, 40, 105], ge: [1536, 1024, 42, 118], th: [1821, 864, 40, 92]}['{{ region }}'];
-            var IMG_W = BG[0], IMG_H = BG[1], TITLE_TOP = BG[2], TITLE_MID = BG[3];
+            var BG = {am: [1536, 1024, 40, 105, 165], ge: [1536, 1024, 42, 118, 190],
+                      th: [1821, 864, 40, 92, 140]}['{{ region }}'];
+            var IMG_W = BG[0], IMG_H = BG[1], TITLE_TOP = BG[2], TITLE_MID = BG[3], TITLE_BOTTOM = BG[4];
+            var GAP = 12, MIN_CARD = 240;
             function place() {
                 var w = window.innerWidth, h = window.innerHeight;
                 var flags = document.querySelector('.region-flags');
-                var card = document.querySelector('.home-cards img');
-                if (!flags || !card) return;
+                var cards = document.querySelectorAll('.home-cards img');
+                if (!flags || !cards.length) return;
+                cards.forEach(function (c) { c.style.height = ''; });   // высота из CSS
                 var s = Math.max(w / IMG_W, h / IMG_H);
                 var crop = IMG_H * s - h;                       // сколько картинки не влезает по высоте
                 var top = flags.getBoundingClientRect().bottom;
-                var bottom = card.getBoundingClientRect().top;
-                var shift = TITLE_MID * s - (top + bottom) / 2;  // надпись — посередине промежутка
-                shift = Math.min(shift, TITLE_TOP * s - top);    // но не под флажками
-                shift = Math.max(0, Math.min(shift, crop));
+                var shift = 0;
+                for (var i = 0; i < 3; i++) {
+                    var rect = cards[0].getBoundingClientRect();
+                    shift = TITLE_MID * s - (top + rect.top) / 2;    // логотип — посередине промежутка
+                    shift = Math.min(shift, TITLE_TOP * s - top);    // но не под флажками
+                    shift = Math.max(0, Math.min(shift, crop));
+                    var over = TITLE_BOTTOM * s - shift + GAP - rect.top;   // насколько логотип заходит на карточки
+                    if (over <= 0 || w < 768) break;                 // на телефоне карточки друг под другом
+                    var height = Math.max(MIN_CARD, rect.height - over);
+                    if (height >= rect.height) break;
+                    cards.forEach(function (c) { c.style.height = height + 'px'; });
+                }
                 document.body.style.backgroundPosition = 'center ' + (-Math.round(shift)) + 'px';
             }
             place();
