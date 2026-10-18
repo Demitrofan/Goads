@@ -31,9 +31,9 @@ ROOMS_ARMENIA = [
 # Регион → что отличается на страницах жилья: адреса, комнаты, подписи
 REGIONS = {
     Listing.GOA: dict(rooms=ROOMS, home="index", list="ads:search_properties",
-                      details="ads:details", place="Населённый пункт"),
+                      details="ads:details", place="Населённый пункт", period="7"),
     Listing.ARMENIA: dict(rooms=ROOMS_ARMENIA, home="index_am", list="rent_am",
-                          details="details_am", place="Район"),
+                          details="details_am", place="Район", period="14"),
 }
 
 AMENITIES = [
@@ -51,9 +51,9 @@ PERIODS = [
     ("1", "за сутки"),
     ("3", "за 3 дня"),
     ("7", "за неделю"),
+    ("14", "за 2 недели"),
     ("30", "за месяц"),
 ]
-DEFAULT_PERIOD = "7"
 
 
 def village_list(region=Listing.GOA):
@@ -65,16 +65,16 @@ def village_list(region=Listing.GOA):
     )
 
 
-def get_form_data(request, rooms=ROOMS):
+def get_form_data(request, rooms=ROOMS, default_period="7"):
     g = request.GET
-    period = g.get("period", DEFAULT_PERIOD)
+    period = g.get("period", default_period)
     return {
         "rent_period": g.get("rent_period", "monthly"),
         "price_from": g.get("price_from", "").strip(),
         "price_to": g.get("price_to", "").strip(),
         "words": g.get("words", "").strip(),
         "village": g.get("village", "").strip(),
-        "period": period if period in dict(PERIODS) else DEFAULT_PERIOD,
+        "period": period if period in dict(PERIODS) else default_period,
         "rooms": [r for r, _ in rooms if g.get(f"rooms_{r}") == "on"],
         "amenities": [a for a, _ in AMENITIES if g.get(a) == "on"],
     }
@@ -117,7 +117,7 @@ def index_armenia(request):
 
 def search_properties(request, region=Listing.GOA):
     conf = REGIONS[region]
-    form = get_form_data(request, conf["rooms"])
+    form = get_form_data(request, conf["rooms"], conf["period"])
     currency = current_currency(request, region)
     queryset, price_field = build_queryset(form, currency, region)
 

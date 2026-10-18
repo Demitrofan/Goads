@@ -41,7 +41,7 @@ import django  # noqa: E402
 django.setup()
 
 from django.conf import settings  # noqa: E402
-from django.db.models import Max  # noqa: E402
+from django.db.models import Max, Min  # noqa: E402
 from loguru import logger  # noqa: E402
 from PIL import Image  # noqa: E402
 from telethon import functions  # noqa: E402
@@ -113,6 +113,8 @@ FIRST_RUN_DAYS = 2           # сколько дней истории забра
 MIN_TEXT_LEN = 60            # короче — точно не объявление
 DUP_WINDOW_DAYS = 30         # окно поиска дублей
 MAX_AGE_DAYS = 7             # сообщения старше — не разбираем (неактуальны), помечаем мусором "old"
+MAX_AGE_DAYS_ARMENIA = 14    # в Ереване сдают надолго — объявления живут дольше
+BACKFILL_BATCH = 100         # догрузка истории Армении: сообщений с канала за цикл (один запрос)
 LLM_WORKERS = 8              # сколько сообщений отправлять в GPT одновременно
 MAX_PHOTOS = 6
 RENT_MIN_MONTH = 3000            # жильё дешевле ₹/мес — ошибка в цене, в мусор
@@ -189,6 +191,38 @@ def resolve_channels(client) -> dict:
     return peers
 
 
+def save_messages(name: str, messages, media: dict) -> int:
+    """Склеивает альбомы и сохраняет сообщения канала. Фото кладёт в media. Возвращает число новых."""
+    albums = {}   # grouped_id → список сообщений альбома
+    singles = []
+    for m in messages:
+        if m.grouped_id:
+            albums.setdefault(m.grouped_id, []).append(m)
+        else:
+            singles.append([m])
+
+    total = 0
+    for group in list(albums.values()) + singles:
+        group.sort(key=lambda x: x.id)
+        text = next((x.message for x in group if x.message), "") or ""
+        text = text.strip()
+        if len(text) < MIN_TEXT_LEN:
+            continue
+        first = group[0]
+        post, created = Post.objects.get_or_create(
+            channel=name, msg_id=first.id,
+            defaults=dict(
+                grouped_id=str(first.grouped_id) if first.grouped_id else None,
+                text=text, text_hash=text_hash(text), date=first.date,
+            ))
+        if created:
+            total += 1
+            photos = [x for x in group if has_picture(x)]
+            if photos:
+                media[post.pk] = photos
+    return total
+
+
 def collect(client, peers: dict) -> dict:
     """Сохраняет новые сообщения. Возвращает {post.pk: [сообщения с фото]} для скачивания."""
     media = {}
@@ -197,16 +231,12 @@ def collect(client, peers: dict) -> dict:
 
     for name, peer in peers.items():
         last_id = Post.objects.filter(channel=name).aggregate(m=Max("msg_id"))["m"] or 0
-        albums = {}   # grouped_id → список сообщений альбома
-        singles = []
+        messages = []
         try:
             for m in client.iter_messages(peer, min_id=last_id, limit=3000):
                 if not last_id and m.date < since:
                     break
-                if m.grouped_id:
-                    albums.setdefault(m.grouped_id, []).append(m)
-                else:
-                    singles.append([m])
+                messages.append(m)
         except FloodWaitError as e:
             logger.warning(f"FloodWait {e.seconds} с на @{name}, жду")
             time.sleep(e.seconds + 1)
@@ -214,29 +244,57 @@ def collect(client, peers: dict) -> dict:
         except Exception as e:
             logger.error(f"Ошибка чтения @{name}: {type(e).__name__}: {e}")
             continue
-
-        for group in list(albums.values()) + singles:
-            group.sort(key=lambda x: x.id)
-            text = next((x.message for x in group if x.message), "") or ""
-            text = text.strip()
-            if len(text) < MIN_TEXT_LEN:
-                continue
-            first = group[0]
-            post, created = Post.objects.get_or_create(
-                channel=name, msg_id=first.id,
-                defaults=dict(
-                    grouped_id=str(first.grouped_id) if first.grouped_id else None,
-                    text=text, text_hash=text_hash(text), date=first.date,
-                ))
-            if created:
-                total += 1
-                photos = [x for x in group if has_picture(x)]
-                if photos:
-                    media[post.pk] = photos
+        total += save_messages(name, messages, media)
         time.sleep(1)
 
     logger.info(f"Сбор: новых сообщений {total}")
     return media
+
+
+_backfill_from = {}   # канал → с какого id читать историю дальше вглубь (None — дошли до границы)
+
+
+def backfill(client, peers: dict, media: dict):
+    """Армения: понемногу дочитывает историю назад до MAX_AGE_DAYS_ARMENIA — по одному запросу
+    на канал за цикл, чтобы не нагружать Telegram."""
+    since = datetime.now(timezone.utc) - timedelta(days=MAX_AGE_DAYS_ARMENIA)
+    total = 0
+    for name in sorted(ARMENIA_CHANNELS & peers.keys()):
+        if name not in _backfill_from:
+            _backfill_from[name] = Post.objects.filter(channel=name).aggregate(m=Min("msg_id"))["m"]
+        offset = _backfill_from[name]
+        if not offset:   # канал ещё не собирался или история уже дочитана
+            continue
+        messages, reached = [], False
+        try:
+            for m in client.iter_messages(peers[name], offset_id=offset, limit=BACKFILL_BATCH):
+                if m.date < since:
+                    reached = True
+                    break
+                messages.append(m)
+        except FloodWaitError as e:
+            logger.warning(f"FloodWait {e.seconds} с на @{name} (история), жду")
+            time.sleep(e.seconds + 1)
+            continue
+        except Exception as e:
+            logger.error(f"Ошибка чтения истории @{name}: {type(e).__name__}: {e}")
+            continue
+        if len(messages) < BACKFILL_BATCH:
+            reached = True   # канал кончился раньше
+        if not reached:
+            # альбом на краю пачки мог разрезаться — его целиком прочитаем в следующий раз
+            edge = messages[-1].grouped_id
+            if edge:
+                messages = [m for m in messages if m.grouped_id != edge] or messages
+            _backfill_from[name] = messages[-1].id
+        else:
+            _backfill_from[name] = None
+        n = save_messages(name, messages, media)
+        total += n
+        oldest = messages[-1].date.strftime("%d.%m") if messages else "—"
+        logger.info(f"История @{name}: +{n}, дошли до {oldest}" + (" — готово" if reached else ""))
+        time.sleep(1)
+    return total
 
 
 # ───────────────────────────────
@@ -251,6 +309,9 @@ def attach(post: Post, obj, status=Post.DUPLICATE):
     if post.date > obj.last_seen:
         obj.last_seen = post.date
         obj.save(update_fields=["last_seen"])
+    if post.date < obj.first_seen:   # догрузка истории: нашлось более раннее сообщение
+        obj.first_seen = post.date
+        obj.save(update_fields=["first_seen"])
 
 
 def find_exact_duplicate(post: Post):
@@ -403,7 +464,9 @@ def process_new(model: str, limit: int | None = None) -> list:
     stats = dict(dup=0, trash=0, rent=0, bike=0, sale=0, merged=0, error=0)
 
     pending = Post.objects.filter(status__in=[Post.NEW, Post.ERROR])
-    old = pending.filter(date__lt=datetime.now(timezone.utc) - timedelta(days=MAX_AGE_DAYS))
+    now = datetime.now(timezone.utc)
+    old = (pending.filter(date__lt=now - timedelta(days=MAX_AGE_DAYS))
+           .exclude(channel__in=ARMENIA_CHANNELS, date__gte=now - timedelta(days=MAX_AGE_DAYS_ARMENIA)))
     stats["trash"] += old.update(status=Post.TRASH, trash_reason="old")
 
     # ERROR тоже берём: повторная попытка после сбоя OpenRouter
@@ -516,6 +579,7 @@ def save_photos(client, peers: dict, created: list, media: dict):
 
 def run_cycle(client, peers, model, limit=None):
     media = collect(client, peers)
+    backfill(client, peers, media)
     created = process_new(model, limit)
     save_photos(client, peers, created, media)
 
