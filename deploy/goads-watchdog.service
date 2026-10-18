@@ -1,0 +1,9 @@
+[Unit]
+Description=GOA doska - сторож сборщика (тревога владельцу)
+
+[Service]
+Type=oneshot
+User=goads
+Group=goads
+WorkingDirectory=/srv/goads
+ExecStart=/srv/goads/venv/bin/python manage.py monitor watchdog

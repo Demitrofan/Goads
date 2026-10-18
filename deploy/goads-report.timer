@@ -1,0 +1,9 @@
+[Unit]
+Description=GOA doska - сводка каждое утро (03:30 UTC = 09:00 в Гоа)
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

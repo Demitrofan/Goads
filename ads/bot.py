@@ -170,6 +170,24 @@ def handle_update(update: dict):
             sub.save(update_fields=["chat_id"])
             send(chat, f"✅ Подписка оформлена:\n<b>{escape(sub.title)}</b>\n\n"
                        "Как только появится подходящее объявление — пришлю.\n/list — мои подписки")
+    elif cmd == "/admin":
+        from ads import monitor
+        if chat == monitor.admin_chat():
+            send(chat, "Вы владелец: сюда приходят сводка и тревоги.\n/report — сводка сейчас")
+        else:
+            # Номер чата владелец вписывает в серверный .env (TG_ADMIN_CHAT_ID) — бот сам права не выдаёт
+            who = msg.get("chat") or {}
+            with open(monitor.STATE.parent / "admin_requests.log", "a", encoding="utf-8") as f:
+                f.write(f"{datetime.now(timezone.utc):%Y-%m-%d %H:%M} {chat} "
+                        f"@{who.get('username', '')} {who.get('first_name', '')}\n")
+            send(chat, f"Номер вашего чата: <code>{chat}</code>\n"
+                       "Если вы владелец сайта — впишите его в .env как TG_ADMIN_CHAT_ID.")
+    elif cmd == "/report":
+        from ads import monitor
+        if chat == monitor.admin_chat():
+            send(chat, monitor.report(save=False))
+        else:
+            send(chat, HELP)
     elif cmd == "/list":
         subs = Subscription.objects.filter(chat_id=chat).order_by("pk")
         if not subs:

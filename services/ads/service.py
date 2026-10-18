@@ -50,6 +50,7 @@ from telethon.sync import TelegramClient  # noqa: E402
 from telethon.tl.types import InputPeerChannel, MessageMediaDocument, MessageMediaPhoto  # noqa: E402
 
 from ads import bot as tg_bot  # noqa: E402
+from ads import monitor  # noqa: E402
 from ads.currency import price_to_rupees  # noqa: E402
 from ads.models import Listing, Photo, Post  # noqa: E402
 from llm import PROMPT_ARMENIA, PROMPT_GEORGIA, parse_ad  # noqa: E402
@@ -699,6 +700,10 @@ def main():
     client.connect()
     if not client.is_user_authorized():
         logger.error("Telegram-сессия не авторизована. Нужен повторный вход.")
+        monitor.alert("tg_auth", "Telegram-сессия сборщика не авторизована — сбор стоит. "
+                                 "Нужен повторный вход в аккаунт (media_session.session).")
+        if not args.once:
+            time.sleep(INTERVAL_MIN * 60)   # служба перезапустит; без паузы — каждые 60 секунд
         return
 
     try:
@@ -706,12 +711,16 @@ def main():
         while True:
             try:
                 run_cycle(client, peers, model, args.limit)
+                monitor.beat()
             except RuntimeError as e:   # нет денег / неверный ключ OpenRouter
                 logger.error(str(e))
+                monitor.alert("llm", f"GPT не разбирает объявления: {e}\n"
+                                     "Проверьте баланс и ключ на openrouter.ai.")
                 if args.once:
                     break
-            except Exception:
+            except Exception as e:
                 logger.exception("Ошибка цикла")
+                monitor.alert("cycle", f"Ошибка цикла сбора: {type(e).__name__}: {e}")
             if args.once:
                 break
             logger.info(f"Пауза {INTERVAL_MIN} мин")
