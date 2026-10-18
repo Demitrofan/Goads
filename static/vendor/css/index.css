@@ -132,7 +132,10 @@ img {
 }
 /* Армения: свой фон */
 body.region-am {
-    background-image: url(../img/armenia.jpg);
+    background-image: url(../img/armenia_bg.jpg);
+    /* фон обрезается больше сверху: надпись ARMENIA поднимается над карточками
+       (проверено для 1280×720, 1366×768, 1440×900, 1536×864, 1920×1080) */
+    background-position: center 75%;
 }
 
 /* «Скоро»: серая карточка без ссылки, без увеличения и подписи при наведении */
@@ -150,6 +153,13 @@ body.region-am {
     justify-content: center;
     gap: 4px;
     padding: 4px 16px 0;
+}
+
+/* Компьютер: флажки в правом углу — посередине сверху на фоне Армении надпись ARMENIA */
+@media (min-width: 768px) {
+    .region-flags {
+        justify-content: flex-end;
+    }
 }
 
 /* Область нажатия больше самого флага: на телефоне по нему легко попасть пальцем */
@@ -184,4 +194,43 @@ body.region-am .home-disclaimer p {
     background: rgba(255, 255, 255, 0.8);
     border-radius: 8px;
     padding: 8px 12px;
+}
+
+/* Армения: подписи при наведении — рукописный шрифт (кириллицы в армянском стиле нет) */
+body.region-am .col-md-4::after {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+}
+
+/* Армения, «Скоро»: карточка цветная и увеличивается как остальные, «Скоро» — при наведении */
+body.region-am .soon img {
+    filter: none;
+}
+
+body.region-am .soon .img-fluid:hover {
+    transform: scale(1.12);
+}
+
+body.region-am .soon span {
+    z-index: 1;
+    font-family: 'Caveat', cursive;
+    font-size: 3.3rem;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;   /* наведение доходит до картинки — она увеличивается */
+}
+
+body.region-am .soon:hover span {
+    opacity: 1;
+}
+
+/* телефон (наведения нет): «Скоро» видно сразу, картинка чуть темнее */
+@media (hover: none) {
+    body.region-am .soon span {
+        opacity: 1;
+    }
+
+    body.region-am .soon img {
+        filter: brightness(0.6);
+    }
 }

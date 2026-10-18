@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {% block css %}
-    <link href="{% static 'vendor/css/index.css'%}?v=6" rel="stylesheet">
+    <link href="{% static 'vendor/css/index.css'%}?v=15" rel="stylesheet">
     <link href="{% static 'vendor/css/jaipur.ttf'%}" rel="stylesheet">
     {% endblock %}
     <style>
@@ -27,6 +27,11 @@
         }
     </style>
 
+    {% if region == 'am' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
+    {% endif %}
     {% include "metrika.html" %}
 </head>
 
@@ -36,17 +41,17 @@
         <div class="row w-100">
             <div class="col-md-4">
                 <a href="{% if region == 'am' %}{% url 'rent_am' %}{% else %}{% url 'ads:search_properties' %}{% endif %}">
-                    <img src="{% if region == 'am' %}{% static 'vendor/img/housing_am.jpg' %}{% else %}{% static 'vendor/img/housing.jpg' %}{% endif %}" class="img-fluid" alt="Жильё">
+                    <img src="{% if region == 'am' %}{% static 'vendor/img/housing_am.jpg' %}?v=3{% else %}{% static 'vendor/img/housing.jpg' %}{% endif %}" class="img-fluid" alt="Жильё">
                 </a>
             </div>
             {% if region == 'am' %}
-            {# В Армении пока только жильё: остальные разделы серые, без ссылки #}
+            {# В Армении пока только жильё: остальные разделы без ссылки, «Скоро» при наведении #}
             <div class="col-md-4 soon">
-                <img src="{% static 'vendor/img/moto.jpg' %}" class="img-fluid" alt="Байки — скоро">
+                <img src="{% static 'vendor/img/moto_am.jpg' %}?v=3" class="img-fluid" alt="Байки — скоро">
                 <span>Скоро</span>
             </div>
             <div class="col-md-4 soon">
-                <img src="{% static 'vendor/img/stuff.jpg' %}" class="img-fluid" alt="Барахолка — скоро">
+                <img src="{% static 'vendor/img/stuff_am.jpg' %}?v=3" class="img-fluid" alt="Барахолка — скоро">
                 <span>Скоро</span>
             </div>
             {% else %}
