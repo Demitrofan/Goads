@@ -254,6 +254,6 @@ body.region-ge {
 
 /* Пхукет: свой фон; по вертикали сдвигает скрипт в index.html (надпись «Пхукет») */
 body.region-th {
-    background-image: url(../img/phuket_bg.jpg?v=2);
+    background-image: url(../img/phuket_bg.jpg?v=3);
     background-position: center top;
 }
