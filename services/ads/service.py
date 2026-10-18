@@ -273,9 +273,10 @@ def backfill(client, peers: dict, media: dict):
     total = 0
     for name in sorted(EXTRA_CHANNELS & peers.keys()):
         if name not in _backfill_from:
-            _backfill_from[name] = Post.objects.filter(channel=name).aggregate(m=Min("msg_id"))["m"]
+            # с самого старого собранного сообщения; в канале ничего нет (за 2 дня не писали) — с новых (0)
+            _backfill_from[name] = Post.objects.filter(channel=name).aggregate(m=Min("msg_id"))["m"] or 0
         offset = _backfill_from[name]
-        if not offset:   # канал ещё не собирался или история уже дочитана
+        if offset is None:   # история уже дочитана
             continue
         messages, reached = [], False
         try:
