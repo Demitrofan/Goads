@@ -133,9 +133,8 @@ img {
 /* Армения: свой фон */
 body.region-am {
     background-image: url(../img/armenia_bg.jpg);
-    /* фон обрезается больше сверху: надпись ARMENIA поднимается над карточками
-       (проверено для 1280×720, 1366×768, 1440×900, 1536×864, 1920×1080) */
-    background-position: center 75%;
+    /* по вертикали фон сдвигает скрипт в index.html: надпись ARMENIA — между флажками и карточками */
+    background-position: center top;
 }
 
 /* «Скоро»: серая карточка без ссылки, без увеличения и подписи при наведении */
@@ -153,13 +152,6 @@ body.region-am {
     justify-content: center;
     gap: 4px;
     padding: 4px 16px 0;
-}
-
-/* Компьютер: флажки в правом углу — посередине сверху на фоне Армении надпись ARMENIA */
-@media (min-width: 768px) {
-    .region-flags {
-        justify-content: flex-end;
-    }
 }
 
 /* Область нажатия больше самого флага: на телефоне по нему легко попасть пальцем */
@@ -232,5 +224,23 @@ body.region-am .soon:hover span {
 
     body.region-am .soon img {
         filter: brightness(0.6);
+    }
+}
+
+/* Армения: белая рамка, чтобы карточки не сливались с ярким фоном */
+body.region-am .home-cards img {
+    border: 3px solid #fff;
+}
+
+/* Армения, компьютер: карточки ниже — сверху место для надписи ARMENIA на фоне */
+@media (min-width: 768px) {
+    body.region-am .home-cards {
+        align-items: flex-end;
+    }
+
+    /* на низком экране ноутбука карточки чуть ниже ростом, чтобы надпись не пряталась за ними;
+       на обычном мониторе размер как в Гоа */
+    body.region-am .container img {
+        height: min(65vh, 500px, calc(100vh - 270px));
     }
 }

@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {% block css %}
-    <link href="{% static 'vendor/css/index.css'%}?v=15" rel="stylesheet">
+    <link href="{% static 'vendor/css/index.css'%}?v=18" rel="stylesheet">
     <link href="{% static 'vendor/css/jaipur.ttf'%}" rel="stylesheet">
     {% endblock %}
     <style>
@@ -82,6 +82,33 @@
             </div>
         </div>
     </div>
+    {% if region == 'am' %}
+    <script>
+        // Фон Армении (1536×1024) растянут на весь экран и обрезается сверху/снизу.
+        // Сдвигаем его так, чтобы буквы ARMENIA (на картинке y 134–220, центр 177)
+        // встала между флажками и карточками при любом размере окна.
+        (function () {
+            var IMG_W = 1536, IMG_H = 1024, TITLE_TOP = 134, TITLE_MID = 177;
+            function place() {
+                var w = window.innerWidth, h = window.innerHeight;
+                var flags = document.querySelector('.region-flags');
+                var card = document.querySelector('.home-cards img');
+                if (!flags || !card) return;
+                var s = Math.max(w / IMG_W, h / IMG_H);
+                var crop = IMG_H * s - h;                       // сколько картинки не влезает по высоте
+                var top = flags.getBoundingClientRect().bottom;
+                var bottom = card.getBoundingClientRect().top;
+                var shift = TITLE_MID * s - (top + bottom) / 2;  // надпись — посередине промежутка
+                shift = Math.min(shift, TITLE_TOP * s - top);    // но не под флажками
+                shift = Math.max(0, Math.min(shift, crop));
+                document.body.style.backgroundPosition = 'center ' + (-Math.round(shift)) + 'px';
+            }
+            place();
+            window.addEventListener('resize', place);
+            window.addEventListener('load', place);
+        })();
+    </script>
+    {% endif %}
 </body>
 
 
