@@ -187,7 +187,8 @@ body.region-am {
     outline: 2px solid #fff;
 }
 
-/* Армения, Грузия: на ярком фоне дисклеймер теряется — светлая подложка */
+/* На ярком фоне дисклеймер теряется — светлая подложка (все регионы) */
+body.region-goa .home-disclaimer p,
 body.region-extra .home-disclaimer p {
     background: rgba(255, 255, 255, 0.8);
     border-radius: 8px;
@@ -233,7 +234,8 @@ body.region-extra .soon:hover span {
     }
 }
 
-/* Армения, Грузия: белая рамка, чтобы карточки не сливались с ярким фоном */
+/* Белая рамка, чтобы карточки не сливались с ярким фоном (все регионы) */
+body.region-goa .home-cards img,
 body.region-extra .home-cards img {
     border: 3px solid #fff;
 }
@@ -249,13 +251,8 @@ body.region-extra .home-cards img {
 
     /* высота карточек: на низком экране ноутбука ниже, чтобы логотип не прятался за ними.
        --card-h ставит скрипт в index.html, если логотип всё равно заходит на карточки */
-    body.region-am,
-    body.region-ge {
-        --card-h0: min(65vh, 500px, calc(100vh - 340px));
-    }
-
     body.region-goa,
-    body.region-th {
+    body.region-extra {
         --card-h0: min(70vh, 560px, calc(100vh - 340px));
     }
 
@@ -279,22 +276,22 @@ body.region-th {
     background-position: center top;
 }
 
-/* Гоа, Пхукет, компьютер: карточки в пропорциях картинки (≈ 2:3), без обрезки — у байка видно колесо.
-   Колонка по ширине карточки, промежуток как в Армении (24 px), три карточки по центру */
+/* Все регионы, компьютер (эталон — Гоа): карточки в пропорциях картинки (≈ 2:3), без обрезки —
+   у байка видно колесо. Колонка по ширине карточки, промежуток 24 px, три карточки по центру */
 @media (min-width: 768px) {
     body.region-goa .home-cards .row,
-    body.region-th .home-cards .row {
+    body.region-extra .home-cards .row {
         justify-content: center;
     }
 
     body.region-goa .home-cards .col-md-4,
-    body.region-th .home-cards .col-md-4 {
+    body.region-extra .home-cards .col-md-4 {
         width: min(33.333%, calc(var(--card-h, var(--card-h0)) * 0.68 + 24px));
     }
 
     /* высота — от ширины: на узком экране (планшет) карточка становится ниже, а не обрезается */
     body.region-goa .home-cards img,
-    body.region-th .home-cards img {
+    body.region-extra .home-cards img {
         width: 100%;
         height: auto;
         aspect-ratio: 0.68;
