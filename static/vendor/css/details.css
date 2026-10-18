@@ -78,6 +78,19 @@ body.bg-light {
     /* основной способ отодвинуть описание ниже */
 }
 
+/* Кнопка «смотреть видео в Telegram» — голубая, как подпись «видео» в списке */
+.btn-video {
+    background: #2aabee;
+    border-color: #2aabee;
+    color: #fff;
+}
+
+.btn-video:hover {
+    background: #1c93d1;
+    border-color: #1c93d1;
+    color: #fff;
+}
+
 #main-photo {
     max-height: 350px;
     max-width: 100%;

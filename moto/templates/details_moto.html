@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     {% load static ads_extras %}
-    <link rel="stylesheet" href="{% static 'vendor/css/details.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'vendor/css/details.css' %}?v=4">
     {% include "metrika.html" %}
 </head>
 
@@ -93,7 +93,7 @@
                     </div>
                     {% endif %}
                     {% if photos.0.is_video %}
-                    <a href="{{ item.main_url }}" target="_blank" rel="noopener" class="btn btn-dark btn-sm mt-2">▶ В объявлении видео — смотреть в Telegram</a>
+                    <a href="{{ item.main_url }}" target="_blank" rel="noopener" class="btn btn-sm mt-2 btn-video">▶ В объявлении видео — смотреть в Telegram</a>
                     {% endif %}
                     {% else %}
                     <div class="main-photo-container mb-2">

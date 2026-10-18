@@ -182,7 +182,7 @@ html {
     bottom: 8px;
     padding: 3px 10px;
     border-radius: 4px;
-    background: rgba(0, 0, 0, 0.7);
+    background: #2aabee;   /* голубой, как в Telegram */
     color: #fff;
     font-size: 0.85rem;
     font-weight: 600;
