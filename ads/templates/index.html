@@ -15,7 +15,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     {% block css %}
-    <link href="{% static 'vendor/css/index.css'%}?v=28" rel="stylesheet">
+    <link href="{% static 'vendor/css/index.css'%}?v=30" rel="stylesheet">
     <link href="{% static 'vendor/css/jaipur.ttf'%}" rel="stylesheet">
     {% endblock %}
     <style>
@@ -107,7 +107,7 @@
                 var flags = document.querySelector('.region-flags');
                 var cards = document.querySelectorAll('.home-cards img');
                 if (!flags || !cards.length) return;
-                cards.forEach(function (c) { c.style.height = ''; });   // высота из CSS
+                document.body.style.removeProperty('--card-h');   // высота из CSS
                 var s = Math.max(w / IMG_W, h / IMG_H);
                 var crop = IMG_H * s - h;                       // сколько картинки не влезает по высоте
                 var top = flags.getBoundingClientRect().bottom;
@@ -121,7 +121,7 @@
                     if (over <= 0 || w < 768) break;                 // на телефоне карточки друг под другом
                     var height = Math.max(MIN_CARD, rect.height - over);
                     if (height >= rect.height) break;
-                    cards.forEach(function (c) { c.style.height = height + 'px'; });
+                    document.body.style.setProperty('--card-h', height + 'px');
                 }
                 document.body.style.backgroundPosition = 'center ' + (-Math.round(shift)) + 'px';
             }

@@ -247,13 +247,23 @@ body.region-extra .home-cards img {
         align-items: flex-end;
     }
 
-    /* на низком экране ноутбука карточки чуть ниже ростом, чтобы надпись не пряталась за ними;
-       на обычном мониторе размер как в Гоа */
+    /* высота карточек: на низком экране ноутбука ниже, чтобы логотип не прятался за ними.
+       --card-h ставит скрипт в index.html, если логотип всё равно заходит на карточки */
+    body.region-am,
+    body.region-ge {
+        --card-h0: min(65vh, 500px, calc(100vh - 340px));
+    }
+
+    body.region-goa,
+    body.region-th {
+        --card-h0: min(70vh, 560px, calc(100vh - 340px));
+    }
+
     body.region-goa .container img,
     body.region-am .container img,
     body.region-ge .container img,
     body.region-th .container img {
-        height: min(65vh, 500px, calc(100vh - 340px));
+        height: var(--card-h, var(--card-h0));
     }
 }
 
@@ -269,13 +279,24 @@ body.region-th {
     background-position: center top;
 }
 
-/* Гоа, Пхукет, компьютер: карточки в исходных пропорциях — без обрезки (у байка видно заднее колесо) */
+/* Гоа, Пхукет, компьютер: карточки в пропорциях картинки (≈ 2:3), без обрезки — у байка видно колесо.
+   Колонка по ширине карточки, промежуток как в Армении (24 px), три карточки по центру */
 @media (min-width: 768px) {
+    body.region-goa .home-cards .row,
+    body.region-th .home-cards .row {
+        justify-content: center;
+    }
+
+    body.region-goa .home-cards .col-md-4,
+    body.region-th .home-cards .col-md-4 {
+        width: min(33.333%, calc(var(--card-h, var(--card-h0)) * 0.68 + 24px));
+    }
+
+    /* высота — от ширины: на узком экране (планшет) карточка становится ниже, а не обрезается */
     body.region-goa .home-cards img,
     body.region-th .home-cards img {
-        width: auto;
-        max-width: 100%;
-        display: block;
-        margin: 0 auto;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 0.68;
     }
 }
