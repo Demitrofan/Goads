@@ -51,6 +51,13 @@ def money(context, rupees, currency=None):
 
 
 @register.filter
+def currency_name(code):
+    """USD → «Доллар США» (подсказка на кнопке валюты)."""
+    from ads.currency import NAMES
+    return NAMES.get(code, code)
+
+
+@register.filter
 def ago(value):
     """«2 часа назад» вместо «2 часа, 33 минуты назад»."""
     from django.utils.timesince import timesince

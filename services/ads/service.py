@@ -387,13 +387,23 @@ def find_similar_stuff(data: dict, text: str, date):
 FIND_SIMILAR = {"rent": find_similar_listing, "bike": find_similar_moto, "sale": find_similar_stuff}
 
 
-def trash_reason(data: dict, region=Listing.GOA) -> str:
+# «от 4000 бат», «from 3500»: цена «от» для всего проката, а не цена конкретной модели
+FROM_PRICE = re.compile(r"(?<![а-яёa-z])(?:от|from|starting)\s*\d", re.I)
+
+
+def trash_reason(data: dict, region=Listing.GOA, text: str = "") -> str:
     kind = data["kind"]
     if kind not in SECTIONS:
         return kind
     if region != Listing.GOA and kind not in EXTRA_REGIONS[region][2]:
         return f"{region}_{kind}"   # в Армении и Грузии пока только жильё, на Пхукете — жильё и байки
-    if data["many_objects"] and not any(not trash_reason(it, region) for it in data["items"]):
+    good = [it for it in data["items"] if not trash_reason(it, region)] if data["many_objects"] else []
+    if (kind == "bike" and len(good) >= 3 and FROM_PRICE.search(text)
+            and len({(it["price_month"], it["price_day"], it["price_sell"]) for it in good}) == 1):
+        # Реклама проката: модели без своих цен, у всех одна цена «от X» из шапки сообщения.
+        # Без «от» одна цена на список бывает честной: «Fascino, Activa, Dio — 8000 в месяц»
+        return "bike_list_same_price"
+    if data["many_objects"] and not good:
         # список, из которого не вышло ни одной годной позиции
         return {"rent": "many_objects", "bike": "bike_many", "sale": "sale_many"}[kind]
     if data["many_objects"]:
@@ -526,7 +536,7 @@ def process_new(model: str, limit: int | None = None) -> list:
             continue
 
         region = region_of(post)
-        reason = trash_reason(data, region)
+        reason = trash_reason(data, region, post.text)
         if reason:
             post.status, post.trash_reason = Post.TRASH, reason
             post.save(update_fields=["status", "trash_reason"])

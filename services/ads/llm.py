@@ -57,6 +57,8 @@ has_helmet, has_delivery, need_deposit, need_passport: true / false / null.
   "Без залогов и депозитов" — need_deposit false. "Фото паспорта", "копия паспорта" — need_passport true.
 Для байков поля price_month, price_day, village, many_objects заполняются так же, как для жилья.
 Список из нескольких разных моделей с разными ценами — many_objects true.
+Реклама проката: перечислены модели без своих цен и одна общая цена «от X» («аренда от 3500 бат/месяц») —
+это не цена модели: many_objects false, items не нужны, price_month и price_day — null.
 
 Если kind = "sale" (барахолка), добавь поля:
 item_title: что продаётся, коротко, 2–6 слов, с большой буквы, например "Детская коляска Chicco",
@@ -180,6 +182,8 @@ has_helmet, has_delivery, need_deposit, need_passport: true / false / null.
   "Без залога паспорта", "без паспорта" — need_passport false. "Депозит 3000" — need_deposit true.
 Для байков village, price_month, price_day, currency, many_objects — так же, как для жилья.
 Прокат со списком моделей и цен — many_objects true.
+Реклама проката: перечислены модели без своих цен и одна общая цена «от X» («аренда от 3500 бат/месяц») —
+это не цена модели: many_objects false, items не нужны, price_month и price_day — null.
 
 Если many_objects = true, добавь поле items — список объектов (не больше 15), в каждом только то,
 чем объекты отличаются: жильё — village, rooms, price_month, price_day, currency;

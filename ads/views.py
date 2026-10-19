@@ -154,7 +154,7 @@ def build_queryset(form, currency="INR", region=Listing.GOA):
         q &= Q(**{field: True})
 
     qs = (Listing.objects.filter(q)
-          .annotate(sources=Count("posts", distinct=True))
+          .annotate(sources=Count("posts__channel", distinct=True))
           .prefetch_related("photos"))
     return qs, price_field
 

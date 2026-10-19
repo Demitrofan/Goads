@@ -50,7 +50,7 @@ def build_queryset(form, currency):
             q &= Q(text__ucontains=word) | Q(title__ucontains=word)
 
     return (StuffListing.objects.filter(q)
-            .annotate(sources=Count("posts", distinct=True))
+            .annotate(sources=Count("posts__channel", distinct=True))
             .prefetch_related("photos"))
 
 

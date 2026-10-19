@@ -79,7 +79,7 @@ def build_queryset(form, currency, region="goa"):
             q &= Q(**{field: value})
 
     qs = (MotoListing.objects.filter(q)
-          .annotate(sources=Count("posts", distinct=True))
+          .annotate(sources=Count("posts__channel", distinct=True))
           .prefetch_related("photos"))
     return qs, price_field
 
