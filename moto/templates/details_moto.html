@@ -84,7 +84,7 @@
                         <img id="main-photo" src="{% if item.model_picture %}{% static item.model_picture %}{% elif photos %}{{ MEDIA_URL }}{{ photos.0.path }}{% else %}{% static item.generic_picture %}{% endif %}"
                              alt="{{ item.title }}" onclick="this.classList.toggle('zoomed');">
                     </div>
-                    <div class="small text-muted mb-3">{% if item.model_picture or not photos %}Примерное изображение модели, не сам этот байк.{% endif %}
+                    <div class="small text-muted mb-3">{% if item.model_picture or not photos %}На фото — пример данной модели. Реальный байк может отличаться по цвету, состоянию и комплектации.{% endif %}
                         Байк из списка в одном объявлении{% if photos %} — фото ниже общие на весь список, на них могут быть другие байки{% endif %}.</div>
                     {% if photos %}
                     <h6 class="fw-semibold">Фото из объявления</h6>
@@ -115,7 +115,7 @@
                     <div class="main-photo-container mb-2">
                         <img src="{% if item.model_picture %}{% static item.model_picture %}{% else %}{% static item.generic_picture %}{% endif %}" alt="{{ item.title }}">
                     </div>
-                    <div class="small text-muted">{% if item.model_picture or item.kind %}Примерное изображение модели, не сам этот байк. {% endif %}Фото и видео смотрите в Telegram</div>
+                    <div class="small text-muted">{% if item.model_picture or item.kind %}На фото — пример данной модели. Реальный байк может отличаться по цвету, состоянию и комплектации. {% endif %}Фото и видео смотрите в Telegram</div>
                     {% endif %}
                     {% endwith %}
                 </div>
