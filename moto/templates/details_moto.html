@@ -36,13 +36,13 @@
 
                     <div class="mb-3">
                         {% if item.price_month %}
-                        <div><span class="fs-4 fw-bold">{% money item.price_month %}</span> <span class="text-muted">/ месяц</span>{% if currency != 'INR' %} <span class="text-muted small">({% money item.price_month "INR" %})</span>{% endif %}</div>
+                        <div><span class="fs-4 fw-bold">{% money item.price_month %}</span> <span class="text-muted">/ месяц</span>{% if currency != 'INR' and region == 'goa' %} <span class="text-muted small">({% money item.price_month "INR" %})</span>{% endif %}</div>
                         {% endif %}
                         {% if item.price_day %}
-                        <div><span class="fs-5 fw-bold">{% money item.price_day %}</span> <span class="text-muted">/ сутки</span>{% if currency != 'INR' %} <span class="text-muted small">({% money item.price_day "INR" %})</span>{% endif %}</div>
+                        <div><span class="fs-5 fw-bold">{% money item.price_day %}</span> <span class="text-muted">/ сутки</span>{% if currency != 'INR' and region == 'goa' %} <span class="text-muted small">({% money item.price_day "INR" %})</span>{% endif %}</div>
                         {% endif %}
                         {% if item.price_sell %}
-                        <div><span class="fs-5 fw-bold">{% money item.price_sell %}</span> <span class="text-muted">продажа</span>{% if currency != 'INR' %} <span class="text-muted small">({% money item.price_sell "INR" %})</span>{% endif %}</div>
+                        <div><span class="fs-5 fw-bold">{% money item.price_sell %}</span> <span class="text-muted">продажа</span>{% if currency != 'INR' and region == 'goa' %} <span class="text-muted small">({% money item.price_sell "INR" %})</span>{% endif %}</div>
                         {% endif %}
                         {% if item.agent_fee %}
                         <div class="text-muted">комиссия агента {% money item.agent_fee %}</div>

@@ -185,6 +185,12 @@ def report(save: bool = True) -> str:
               "Отправлено объявлений: " + (f"{sent_day}" if sent_day is not None and sent_day >= 0
                                            else "— (считаю со следующей сводки)")]
 
+    try:
+        from ads import visits
+        lines += visits.report_lines()
+    except Exception as e:   # сводка важнее подсчёта посетителей
+        lines += ["", f"Посетители: не посчитались ({e})"]
+
     money = gpt_money()
     fmt = lambda v: f"${v:.2f}" if isinstance(v, (int, float)) else "?"
     # За сутки — разница месячного расхода с прошлой сводкой (usage_daily считается с 00:00 UTC)

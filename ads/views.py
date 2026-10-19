@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from ads.currency import COOKIE, current_currency, get_rates, to_rupees
+from ads.currency import cookie_name, current_currency, get_rates, region_of_path, to_rupees
 from ads.models import Listing, Subscription
 from ads import seo
 from ads.places import main_city
@@ -209,9 +209,10 @@ def search_properties(request, region=Listing.GOA):
 
 
 def remember_currency(request, response):
-    """Выбранная валюта запоминается на год."""
+    """Выбранная валюта запоминается на год — для каждого региона своя."""
     if "cur" in request.GET:
-        response.set_cookie(COOKIE, current_currency(request), max_age=365 * 24 * 3600)
+        region = region_of_path(request.path)
+        response.set_cookie(cookie_name(region), current_currency(request, region), max_age=365 * 24 * 3600)
     return response
 
 

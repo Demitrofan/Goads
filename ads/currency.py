@@ -15,25 +15,28 @@ CACHE_SECONDS = 6 * 60 * 60
 FALLBACK = {"INR": 1.0, "RUB": 0.87, "USD": 0.0104, "UAH": 0.469, "BYN": 0.0313,
             "AMD": 4.0, "EUR": 0.0095, "GEL": 0.028, "THB": 0.37}
 
-# Не показываются, но нужны сборщику: цены в драмах, лари и евро → рупии
-EXTRA = ["AMD", "GEL", "EUR"]
-
-# Местная валюта региона: показывается только в нём (бат — на Пхукете)
-LOCAL = {"th": "THB"}
+# Не показывается, но нужно сборщику: цены в евро → рупии
+EXTRA = ["EUR"]
 
 CURRENCIES = {
     "RUB": "₽",
+    "USD": "$",
     "BYN": mark_safe('<span class="byn-sign">Б</span>'),  # знака нет в Unicode: Б с чертой через CSS
     "UAH": "₴",
-    "USD": "$",
     "INR": "₹",
+    "AMD": "֏",
+    "GEL": "₾",
     "THB": "฿",
 }
 
-# Округление при показе: рубли до сотни, гривны до десятка, остальное до единицы
-ROUND_TO = {"RUB": -2, "UAH": -1}
+# Общие валюты — во всех регионах; местная — только в своём и включена по умолчанию
+COMMON = ["RUB", "USD", "BYN", "UAH"]
+LOCAL = {"goa": "INR", "am": "AMD", "ge": "GEL", "th": "THB"}
+
+# Округление при показе: рубли и драмы до сотни, гривны и баты до десятка, остальное до единицы
+ROUND_TO = {"RUB": -2, "AMD": -2, "UAH": -1, "THB": -1}
 DEFAULT = "RUB"
-COOKIE = "currency"
+COOKIE = "currency"   # выбор запоминается для каждого региона отдельно: currency_am, currency_th...
 
 
 def get_rates() -> dict:
@@ -60,16 +63,23 @@ def get_rates() -> dict:
 
 
 def region_currencies(region: str = "goa") -> dict:
-    """Валюты в переключателе: рупии — только в Гоа, местная валюта (бат) — только в своём регионе."""
-    hidden = {c for r, c in LOCAL.items() if r != region}
-    if region != "goa":
-        hidden.add("INR")
-    return {code: sym for code, sym in CURRENCIES.items() if code not in hidden}
+    """Валюты в переключателе: местная валюта региона первой, затем общие."""
+    codes = [LOCAL[region]] if region in LOCAL else []
+    return {code: CURRENCIES[code] for code in codes + COMMON}
+
+
+def local_currency(region: str = "goa") -> str:
+    return LOCAL.get(region, DEFAULT)
+
+
+def cookie_name(region: str = "goa") -> str:
+    return f"{COOKIE}_{region}"
 
 
 def current_currency(request, region: str = "goa") -> str:
-    cur = request.GET.get("cur") or request.COOKIES.get(COOKIE) or DEFAULT
-    return cur if cur in region_currencies(region) else DEFAULT
+    """Выбранная в этом регионе валюта; если ещё не выбирали — местная."""
+    cur = request.GET.get("cur") or request.COOKIES.get(cookie_name(region))
+    return cur if cur in region_currencies(region) else local_currency(region)
 
 
 def convert(rupees, currency: str, rates: dict):
