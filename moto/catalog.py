@@ -3,7 +3,7 @@
 
 Картинка модели — static/vendor/img/bikes/<код>.jpg (4:3, например 800×600). Её показывают, когда своих
 фото у объявления нет или фото общие на весь прайс-лист (на них могут быть другие байки).
-Пока картинки нет — показывается заглушка bikes/none.svg. Новая модель = строка в MODELS (+ картинка).
+Модель не узнали — общий скутер/мотоцикл (generic-scooter/generic-motorcycle), тип неизвестен — bikes/none.svg. Новая модель = строка в MODELS (+ картинка).
 """
 import re
 from functools import lru_cache
@@ -79,6 +79,12 @@ def family_of(name: str | None) -> str | None:
 
 def is_car(name: str | None) -> bool:
     return bool(name and CARS.search(name))
+
+
+def generic_picture(kind: str | None) -> str:
+    """Модель не узнали и фото нет: общий скутер или мотоцикл; тип неизвестен — заглушка «без фото»."""
+    code = {"scooter": "generic-scooter", "motorcycle": "generic-motorcycle"}.get(kind)
+    return picture(code) or NO_PHOTO
 
 
 @lru_cache(maxsize=None)

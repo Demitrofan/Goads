@@ -81,10 +81,10 @@
                     {% with photos=item.photos.all %}
                     {% if item.from_list %}
                     <div class="main-photo-container mb-1">
-                        <img id="main-photo" src="{% if item.model_picture %}{% static item.model_picture %}{% elif photos %}{{ MEDIA_URL }}{{ photos.0.path }}{% else %}{% static 'vendor/img/bikes/none.svg' %}{% endif %}"
+                        <img id="main-photo" src="{% if item.model_picture %}{% static item.model_picture %}{% elif photos %}{{ MEDIA_URL }}{{ photos.0.path }}{% else %}{% static item.generic_picture %}{% endif %}"
                              alt="{{ item.title }}" onclick="this.classList.toggle('zoomed');">
                     </div>
-                    <div class="small text-muted mb-3">{% if item.model_picture %}Фото модели, не этого байка.{% endif %}
+                    <div class="small text-muted mb-3">{% if item.model_picture or not photos %}Примерное изображение модели, не сам этот байк.{% endif %}
                         Байк из списка в одном объявлении{% if photos %} — фото ниже общие на весь список, на них могут быть другие байки{% endif %}.</div>
                     {% if photos %}
                     <h6 class="fw-semibold">Фото из объявления</h6>
@@ -113,9 +113,9 @@
                     {% endif %}
                     {% else %}
                     <div class="main-photo-container mb-2">
-                        <img src="{% static 'vendor/img/video.jpg' %}" alt="Фото и видео — в Telegram">
+                        <img src="{% if item.model_picture %}{% static item.model_picture %}{% else %}{% static item.generic_picture %}{% endif %}" alt="{{ item.title }}">
                     </div>
-                    <div class="small text-muted">Фото и видео смотрите в Telegram</div>
+                    <div class="small text-muted">{% if item.model_picture or item.kind %}Примерное изображение модели, не сам этот байк. {% endif %}Фото и видео смотрите в Telegram</div>
                     {% endif %}
                     {% endwith %}
                 </div>

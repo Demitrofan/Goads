@@ -130,6 +130,11 @@ class MotoListing(models.Model):
         return picture(self.family)
 
     @property
+    def generic_picture(self):
+        from moto.catalog import generic_picture
+        return generic_picture(self.kind)
+
+    @property
     def main_url(self):
         post = self.posts.order_by("-date").first()
         return post.url if post else ""

@@ -156,12 +156,13 @@
                             {% if photo.is_video %}<span class="video-play" aria-hidden="true"></span><span class="video-badge">видео</span>{% endif %}
                             {% elif item.model_picture %}
                             <img src="{% static item.model_picture %}" class="card-img-top" alt="{{ item.title }}">
-                            <span class="photo-badge">фото модели</span>
+                            <span class="photo-badge">примерное изображение модели</span>
                             {% elif photo %}
                             <img src="{{ MEDIA_URL }}{{ photo.path }}" class="card-img-top" alt="{{ item.title }} — фото из объявления">
                             <span class="photo-badge">общее фото списка</span>
                             {% else %}
-                            <img src="{% static 'vendor/img/bikes/none.svg' %}" class="card-img-top card-img-none" alt="Без фото">
+                            <img src="{% static item.generic_picture %}" class="card-img-top{% if not item.kind %} card-img-none{% endif %}" alt="{{ item.title }}">
+                            {% if item.kind %}<span class="photo-badge">примерное изображение</span>{% endif %}
                             {% endif %}
                             {% endwith %}
                         </a>
