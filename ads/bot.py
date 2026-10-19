@@ -117,7 +117,8 @@ def describe(section: str, region: str, query: str, currency: str) -> str:
     if form.get("kinds"):
         parts.append(", ".join(c["kinds"].get(k, k) for k in form["kinds"]).lower())
     if form.get("model"):
-        parts.append(form["model"])
+        from moto.catalog import NAMES
+        parts.append(NAMES.get(form["model"], form["model"]))
     if form.get("categories"):
         parts.append(", ".join(c["cats"].get(k, k) for k in form["categories"]).lower())
     if form.get("free"):
@@ -224,7 +225,7 @@ def item_line(section: str, obj, cur: str, rates: dict, rooms: dict) -> str:
         price = (f"{money(obj.price_month, cur, rates)}/мес" if obj.price_month
                  else f"{money(obj.price_day, cur, rates)}/сутки" if obj.price_day
                  else f"продажа {money(obj.price_sell, cur, rates)}" if obj.price_sell else "")
-        bits = ["🛵 " + (obj.model_name or "Байк"), obj.village or "", price]
+        bits = ["🛵 " + (obj.title if obj.model_name or obj.family else "Байк"), obj.village or "", price]
     else:
         price = "даром" if obj.is_free else money(obj.price, cur, rates)
         bits = ["🛍 " + obj.title, obj.village or "", price]

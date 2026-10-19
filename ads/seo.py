@@ -148,7 +148,7 @@ def rent_seo(item, room_label):
 
 
 def moto_seo(item):
-    name = item.model_name or item.get_kind_display() or "Байк"
+    name = (item.title if item.family else item.model_name) or item.get_kind_display() or "Байк"
     if item.price_sell and not (item.price_month or item.price_day):
         deal, cost = "Продажа", price(item.price_sell)
     else:

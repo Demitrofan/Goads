@@ -9,6 +9,7 @@ from django.utils import timezone
 from ads.currency import current_currency, get_rates, to_rupees
 from ads import seo
 from ads.views import PERIODS, remember_currency
+from moto.catalog import NAMES
 from moto.models import MotoListing
 
 KINDS = MotoListing.KINDS
@@ -33,11 +34,10 @@ REGIONS = {
 
 
 def model_list(region="goa"):
-    return list(
-        MotoListing.objects.filter(region=region)
-        .exclude(model_name__isnull=True).exclude(model_name="")
-        .order_by("model_name").values_list("model_name", flat=True).distinct()
-    )
+    """[(код, название)] моделей из справочника, которые есть в регионе, по алфавиту."""
+    codes = (MotoListing.objects.filter(region=region, closed__isnull=True).exclude(family__isnull=True)
+             .values_list("family", flat=True).distinct())
+    return sorted(((c, NAMES[c]) for c in set(codes) if c in NAMES), key=lambda x: x[1])
 
 
 def get_form_data(request):
@@ -67,7 +67,9 @@ def build_queryset(form, currency, region="goa"):
         q &= Q(**{f"{price_field}__lte": to_rupees(int(form["price_to"]), currency, rates)})
     if form["kinds"]:
         q &= Q(kind__in=form["kinds"])
-    if form["model"]:
+    if form["model"] in NAMES:
+        q &= Q(family=form["model"])
+    elif form["model"]:   # старые подписки бота: название как его написал GPT
         q &= Q(model_name=form["model"])
     if form["words"]:
         for word in form["words"].replace(",", " ").split():

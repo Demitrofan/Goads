@@ -56,6 +56,7 @@ from ads.places import split_place  # noqa: E402
 from ads.models import Listing, Photo, Post  # noqa: E402
 from llm import PROMPT_ARMENIA, PROMPT_GEORGIA, PROMPT_PHUKET, parse_ad  # noqa: E402
 from moto.models import MotoListing, MotoPhoto, model_info  # noqa: E402
+from moto.catalog import family_of, is_car  # noqa: E402
 from stuff.models import StuffListing, StuffPhoto  # noqa: E402
 from tg_urls import tg_urls as rent_urls  # noqa: E402
 
@@ -403,6 +404,8 @@ def trash_reason(data: dict, region=Listing.GOA) -> str:
         if not (data["price_sell"] or data["is_free"]):
             return "sale_no_price"
         return ""
+    if kind == "bike" and is_car(data["bike_model"]):
+        return "car"   # аренда машины, принятая за байк
     has_price = data["price_month"] or data["price_day"] or (kind == "bike" and data["price_sell"])
     if not has_price:
         return "no_price" if kind == "rent" else "bike_no_price"
@@ -439,7 +442,7 @@ def bike_specs(name: str):
     return None
 
 
-def create_listing(post: Post, data: dict):
+def create_listing(post: Post, data: dict, from_list: bool = False):
     if data["kind"] == "sale":
         return StuffListing.objects.create(
             title=data["item_title"], category=data["item_category"],
@@ -449,6 +452,7 @@ def create_listing(post: Post, data: dict):
         spec = bike_specs(data["bike_model"])
         return MotoListing.objects.create(
             region=region_of(post), model_name=data["bike_model"], kind=data["bike_kind"], year=data["bike_year"],
+            family=family_of(data["bike_model"]), from_list=from_list,
             engine=spec.engine if spec else None,
             horse_power=spec.horse_power if spec else None,
             weight=spec.weight if spec else None,
@@ -542,7 +546,7 @@ def process_new(model: str, limit: int | None = None) -> list:
                 attach(post, similar)
                 stats["merged"] += 1
                 continue
-            obj = create_listing(post, item)
+            obj = create_listing(post, item, from_list=data["many_objects"])
             attach(post, obj)
             created.append((post, obj))
             stats[item["kind"]] += 1

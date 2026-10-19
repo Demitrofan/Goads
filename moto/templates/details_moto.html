@@ -29,7 +29,7 @@
                     {% if item.closed %}
                     <div class="alert alert-secondary py-2 mb-3">Объявление снято — автор удалил его в Telegram или отметил, что уже сдано или продано.</div>
                     {% endif %}
-                    <h4 class="fw-bold mb-1">{{ item.model_name|default:"Модель не указана" }}</h4>
+                    <h4 class="fw-bold mb-1">{{ item.title }}</h4>
                     <div class="text-muted mb-3">
                         {{ kind_label }}{% if item.year %} · {{ item.year }} г.{% endif %}{% if item.village %} · {{ item.village }}{% endif %}
                     </div>
@@ -79,7 +79,23 @@
                 <!-- Фото -->
                 <div class="col-lg-8">
                     {% with photos=item.photos.all %}
+                    {% if item.from_list %}
+                    <div class="main-photo-container mb-1">
+                        <img id="main-photo" src="{% if item.model_picture %}{% static item.model_picture %}{% elif photos %}{{ MEDIA_URL }}{{ photos.0.path }}{% else %}{% static 'vendor/img/bikes/none.svg' %}{% endif %}"
+                             alt="{{ item.title }}" onclick="this.classList.toggle('zoomed');">
+                    </div>
+                    <div class="small text-muted mb-3">{% if item.model_picture %}Фото модели, не этого байка.{% endif %}
+                        Байк из списка в одном объявлении{% if photos %} — фото ниже общие на весь список, на них могут быть другие байки{% endif %}.</div>
                     {% if photos %}
+                    <h6 class="fw-semibold">Фото из объявления</h6>
+                    <div class="thumbnail-container">
+                        {% for p in photos %}
+                        <img src="{{ MEDIA_URL }}{{ p.path }}" alt="Фото из объявления {{ forloop.counter }}"
+                             onclick="document.getElementById('main-photo').src = this.src;">
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% elif photos %}
                     <div class="main-photo-container mb-2">
                         <img id="main-photo" src="{{ MEDIA_URL }}{{ photos.0.path }}" alt="{{ item.model_name|default:'Байк' }} {{ conf.where }}"
                              onclick="this.classList.toggle('zoomed');">

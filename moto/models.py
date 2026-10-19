@@ -83,6 +83,10 @@ class MotoListing(models.Model):
     # Гоа или Пхукет (коды как у Listing.REGIONS)
     region = models.CharField("Регион", max_length=8, default="goa", db_index=True)
     model_name = models.CharField("Модель", max_length=100, null=True, blank=True, db_index=True)
+    # Модель из справочника moto/catalog.py ("aerox", "himalayan"...): для фильтра и картинки модели
+    family = models.CharField("Модель по справочнику", max_length=30, null=True, blank=True, db_index=True)
+    # Из сообщения про несколько байков: фото общие на весь список, на карточке — картинка модели
+    from_list = models.BooleanField("Из прайс-листа", default=False)
     kind = models.CharField("Тип", max_length=12, choices=KINDS, null=True, blank=True)
     year = models.PositiveSmallIntegerField("Год", null=True, blank=True)
     engine = models.FloatField("Объём, см³", null=True, blank=True)
@@ -113,6 +117,17 @@ class MotoListing(models.Model):
 
     def __str__(self):
         return f"{self.model_name or '?'} · {self.price_month or '—'} ₹/мес"
+
+    @property
+    def title(self):
+        """Название для карточки: по справочнику, если модель узнали."""
+        from moto.catalog import NAMES
+        return NAMES.get(self.family) or self.model_name or "Модель не указана"
+
+    @property
+    def model_picture(self):
+        from moto.catalog import picture
+        return picture(self.family)
 
     @property
     def main_url(self):
